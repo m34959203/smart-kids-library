@@ -1,0 +1,219 @@
+{
+  "common": {
+    "appName": "Smart Kids Library Satpayev",
+    "appShort": "Smart Kids Library",
+    "search": "Поиск",
+    "searchPlaceholder": "Поиск книг, событий...",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "create": "Создать",
+    "back": "Назад",
+    "next": "Далее",
+    "prev": "Назад",
+    "viewAll": "Смотреть все",
+    "readMore": "Читать далее",
+    "language": "Язык",
+    "russian": "Русский",
+    "kazakh": "Қазақша",
+    "login": "Войти",
+    "logout": "Выйти",
+    "register": "Регистрация",
+    "profile": "Профиль",
+    "home": "Главная",
+    "noResults": "Ничего не найдено",
+    "age": "Возраст"
+  },
+  "nav": {
+    "home": "Главная",
+    "catalog": "Каталог",
+    "news": "Новости",
+    "events": "События",
+    "about": "О библиотеке",
+    "resources": "Ресурсы",
+    "rules": "Правила",
+    "contacts": "Контакты",
+    "kids": "Детям",
+    "services": "Услуги",
+    "admin": "Админ"
+  },
+  "home": {
+    "hero": "Добро пожаловать в Smart Kids Library!",
+    "heroSubtitle": "Открой мир знаний вместе с нами",
+    "selectAge": "Выберите возрастную группу",
+    "popularBooks": "Популярные книги",
+    "upcomingEvents": "Ближайшие события",
+    "latestNews": "Последние новости",
+    "forYou": "Рекомендации для тебя",
+    "startReading": "Начать читать",
+    "exploreMore": "Узнать больше"
+  },
+  "catalog": {
+    "title": "Каталог книг",
+    "search": "Найти книгу...",
+    "smartSearch": "Умный поиск: опишите какую книгу ищете",
+    "filters": "Фильтры",
+    "genre": "Жанр",
+    "age": "Возраст",
+    "language": "Язык",
+    "available": "Доступна",
+    "unavailable": "Недоступна",
+    "readOnline": "Читать онлайн",
+    "addFavorite": "В избранное",
+    "removeFavorite": "Убрать из избранного",
+    "pages": "стр.",
+    "year": "Год",
+    "author": "Автор",
+    "description": "Описание",
+    "totalBooks": "Всего книг"
+  },
+  "reader": {
+    "title": "Чтение",
+    "page": "Страница",
+    "of": "из",
+    "bookmark": "Закладка",
+    "fontSize": "Размер шрифта",
+    "theme": "Тема",
+    "progress": "Прогресс"
+  },
+  "events": {
+    "title": "Календарь событий",
+    "upcoming": "Ближайшие",
+    "past": "Прошедшие",
+    "today": "Сегодня",
+    "workshop": "Мастер-класс",
+    "authorMeeting": "Встреча с автором",
+    "contest": "Конкурс",
+    "exhibition": "Выставка",
+    "reading": "Чтение",
+    "register": "Записаться",
+    "participants": "участников",
+    "location": "Место",
+    "time": "Время",
+    "daysLeft": "дней осталось",
+    "filterByAge": "По возрасту",
+    "filterByType": "По типу"
+  },
+  "kids": {
+    "title": "Детский раздел",
+    "stories": "Генератор сказок",
+    "quizzes": "Литературные викторины",
+    "workshop": "Творческая мастерская",
+    "coloring": "Раскраски",
+    "storiesDesc": "Создай свою уникальную сказку с помощью ИИ!",
+    "quizzesDesc": "Проверь свои знания по литературе!",
+    "workshopDesc": "Пиши стихи и рассказы с помощником!",
+    "coloringDesc": "Раскраски по мотивам любимых книг!"
+  },
+  "stories": {
+    "title": "Генератор сказок",
+    "childName": "Имя героя",
+    "theme": "Тема сказки",
+    "character": "Главный персонаж",
+    "ageLevel": "Возраст",
+    "generate": "Создать сказку!",
+    "generating": "Создаю волшебную историю...",
+    "listen": "Послушать",
+    "chooseNext": "Что будет дальше?",
+    "saveStory": "Сохранить историю",
+    "themes": {
+      "adventure": "Приключение",
+      "friendship": "Дружба",
+      "magic": "Волшебство",
+      "nature": "Природа",
+      "space": "Космос",
+      "animals": "Животные"
+    }
+  },
+  "quiz": {
+    "title": "Литературные викторины",
+    "start": "Начать",
+    "question": "Вопрос",
+    "correct": "Правильно!",
+    "incorrect": "Неправильно!",
+    "score": "Счет",
+    "results": "Результаты",
+    "tryAgain": "Попробовать снова",
+    "easy": "Легко",
+    "medium": "Средне",
+    "hard": "Сложно"
+  },
+  "workshop": {
+    "title": "Творческая мастерская",
+    "writeStory": "Написать рассказ",
+    "writePoem": "Написать стихотворение",
+    "getHelp": "Получить помощь ИИ",
+    "suggestRhyme": "Подсказать рифму",
+    "continue": "Продолжить историю"
+  },
+  "chat": {
+    "title": "Библиотекарь-помощник",
+    "placeholder": "Задайте вопрос...",
+    "welcome": "Привет! Я цифровой библиотекарь. Чем могу помочь?",
+    "thinking": "Думаю...",
+    "voiceInput": "Голосовой ввод",
+    "modes": {
+      "general": "Общий",
+      "search": "Поиск книг",
+      "education": "Учеба"
+    },
+    "escalate": "Связаться с библиотекарем"
+  },
+  "profile": {
+    "title": "Личный кабинет",
+    "readingHistory": "История чтения",
+    "favorites": "Избранное",
+    "quizResults": "Результаты викторин",
+    "stories": "Мои истории",
+    "settings": "Настройки"
+  },
+  "about": {
+    "title": "О библиотеке",
+    "description": "Детская библиотека города Сатпаев — место, где каждый ребенок найдет книгу по душе.",
+    "mission": "Наша миссия",
+    "missionText": "Развивать любовь к чтению и познанию мира у детей и подростков города Сатпаев.",
+    "history": "История",
+    "team": "Наша команда",
+    "hours": "Часы работы",
+    "hoursText": "Пн-Пт: 9:00-18:00, Сб: 10:00-16:00"
+  },
+  "contacts": {
+    "title": "Контакты",
+    "address": "Адрес",
+    "addressText": "г. Сатпаев, ул. Абая, 1",
+    "phone": "Телефон",
+    "email": "Email",
+    "socialMedia": "Социальные сети"
+  },
+  "rules": {
+    "title": "Правила библиотеки"
+  },
+  "resources": {
+    "title": "Электронные ресурсы"
+  },
+  "services": {
+    "title": "Онлайн услуги"
+  },
+  "admin": {
+    "dashboard": "Панель управления",
+    "catalog": "Управление каталогом",
+    "news": "Управление новостями",
+    "events": "Управление событиями",
+    "knowledge": "База знаний ИИ",
+    "social": "Соцсети",
+    "analytics": "Аналитика",
+    "moderation": "Модерация",
+    "totalVisits": "Всего посещений",
+    "aiUsage": "Использование ИИ",
+    "popularBooks": "Популярные книги",
+    "tokensUsed": "Токенов использовано"
+  },
+  "footer": {
+    "copyright": "Smart Kids Library Satpayev",
+    "rights": "Все права защищены",
+    "address": "г. Сатпаев, Караганда, Казахстан"
+  }
+}
