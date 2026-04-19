@@ -17,6 +17,7 @@ export default function BookReader({ bookId, title, content, totalPages, initial
   const [fontSize, setFontSize] = useState(18);
   const [theme, setTheme] = useState<"light" | "sepia" | "dark">("light");
   const [bookmarked, setBookmarked] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   const themes = {
     light: { bg: "bg-white", text: "text-gray-900" },
@@ -26,22 +27,68 @@ export default function BookReader({ bookId, title, content, totalPages, initial
 
   const progress = Math.round((currentPage / totalPages) * 100);
 
+  // Hydrate progress & preferences on mount
+  useEffect(() => {
+    const prefKey = `skl.reader.${bookId}`;
+    try {
+      const raw = localStorage.getItem(prefKey);
+      if (raw) {
+        const p = JSON.parse(raw) as { fontSize?: number; theme?: "light" | "sepia" | "dark" };
+        if (p.fontSize) setFontSize(p.fontSize);
+        if (p.theme) setTheme(p.theme);
+      }
+    } catch {
+      // ignore
+    }
+
+    let aborted = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/catalog/progress?bookId=${bookId}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as { currentPage?: number; bookmarked?: boolean };
+        if (aborted) return;
+        if (typeof data.currentPage === "number" && data.currentPage > 0) {
+          setCurrentPage(Math.min(Math.max(1, data.currentPage), totalPages || data.currentPage));
+        }
+        if (typeof data.bookmarked === "boolean") setBookmarked(data.bookmarked);
+      } catch {
+        // ignore
+      } finally {
+        if (!aborted) setHydrated(true);
+      }
+    })();
+    return () => {
+      aborted = true;
+    };
+  }, [bookId, totalPages]);
+
+  // Persist font/theme prefs locally
+  useEffect(() => {
+    try {
+      localStorage.setItem(`skl.reader.${bookId}`, JSON.stringify({ fontSize, theme }));
+    } catch {
+      // ignore
+    }
+  }, [bookId, fontSize, theme]);
+
   const saveProgress = useCallback(async () => {
     try {
       await fetch("/api/catalog", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookId, currentPage, totalPages }),
+        body: JSON.stringify({ bookId, currentPage, totalPages, bookmarked }),
       });
     } catch {
       // Silent fail
     }
-  }, [bookId, currentPage, totalPages]);
+  }, [bookId, currentPage, totalPages, bookmarked]);
 
   useEffect(() => {
-    const timer = setTimeout(saveProgress, 2000);
+    if (!hydrated) return;
+    const timer = setTimeout(saveProgress, 1500);
     return () => clearTimeout(timer);
-  }, [currentPage, saveProgress]);
+  }, [currentPage, bookmarked, hydrated, saveProgress]);
 
   const pageLabels = {
     ru: { page: "Страница", of: "из", bookmark: "Закладка", fontSize: "Шрифт", theme: "Тема" },

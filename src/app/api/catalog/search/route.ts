@@ -2,12 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getMany } from "@/lib/db";
 import { generateJSON } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { readJson, v, validate } from "@/lib/validate";
+
+const schema = v.object({
+  query: v.string({ max: 200 }),
+  language: v.optional(v.enum(["ru", "kk"] as const)),
+});
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { query: searchQuery, language = "ru" } = body;
+  const blocked = enforceRateLimit(request, { bucket: "catalog-search", max: 40, windowMs: 60_000 });
+  if (blocked) return blocked;
 
-  if (!searchQuery) {
+  const parsed = validate<{ query: string; language?: "ru" | "kk" }>(await readJson(request), schema);
+  if (!parsed.ok) {
+    return NextResponse.json({ books: [], suggestedFilters: [] });
+  }
+  const { query: searchQuery, language = "ru" } = parsed.data;
+
+  if (!searchQuery.trim()) {
     return NextResponse.json({ books: [], suggestedFilters: [] });
   }
 

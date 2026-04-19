@@ -3,8 +3,16 @@ import { sendTelegramMessage, sendTelegramPhoto, formatNewsForTelegram, formatEv
 import { publishInstagramPost, formatCaptionForInstagram } from "@/lib/instagram";
 import { generateText } from "@/lib/gemini";
 import { query } from "@/lib/db";
+import { requireStaff } from "@/lib/auth-guard";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const guard = await requireStaff();
+  if (guard instanceof NextResponse) return guard;
+
+  const blocked = enforceRateLimit(request, { bucket: "social-post", max: 20, windowMs: 60_000 });
+  if (blocked) return blocked;
+
   const body = await request.json();
   const { contentType, contentId, platform, title, description, imageUrl, date, location } = body;
 

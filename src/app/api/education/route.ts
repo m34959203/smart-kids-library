@@ -1,10 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { readJson, v, validate } from "@/lib/validate";
+
+const schema = v.object({
+  type: v.optional(v.enum(["workshop", "literature", "essay", "general"] as const)),
+  mode: v.optional(v.enum(["poem", "story"] as const)),
+  action: v.optional(v.enum(["continue", "rhyme", "feedback"] as const)),
+  text: v.optional(v.string({ max: 4000 })),
+  topic: v.optional(v.string({ max: 400 })),
+  grade: v.optional(v.number({ int: true, min: 1, max: 11 })),
+  language: v.optional(v.enum(["ru", "kk"] as const)),
+});
+
+interface EduBody {
+  type?: "workshop" | "literature" | "essay" | "general";
+  mode?: "poem" | "story";
+  action?: "continue" | "rhyme" | "feedback";
+  text?: string;
+  topic?: string;
+  grade?: number;
+  language?: "ru" | "kk";
+}
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { type, mode, action, text, topic, grade, language = "ru" } = body;
+  const blocked = enforceRateLimit(request, { bucket: "education", max: 15, windowMs: 60_000 });
+  if (blocked) return blocked;
+
+  const parsed = validate<EduBody>(await readJson(request), schema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
+  }
+  const { type = "general", mode, action, text, topic, grade, language = "ru" } = parsed.data;
 
   const withinLimit = await isWithinTokenLimit();
   if (!withinLimit) {

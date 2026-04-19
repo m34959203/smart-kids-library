@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { readJson, v, validate } from "@/lib/validate";
+
+const schema = v.object({
+  theme: v.string({ min: 1, max: 200 }),
+  language: v.optional(v.enum(["ru", "kk"] as const)),
+});
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { theme, language = "ru" } = body;
+  const blocked = enforceRateLimit(request, { bucket: "coloring", max: 10, windowMs: 60_000 });
+  if (blocked) return blocked;
 
-  if (!theme) {
-    return NextResponse.json({ error: "Theme is required" }, { status: 400 });
+  const parsed = validate<{ theme: string; language?: "ru" | "kk" }>(await readJson(request), schema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
   }
+  const { theme } = parsed.data;
 
   const withinLimit = await isWithinTokenLimit();
   if (!withinLimit) {

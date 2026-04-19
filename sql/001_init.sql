@@ -181,9 +181,10 @@ CREATE INDEX idx_token_usage_date ON token_usage(date);
 CREATE INDEX idx_reading_progress_user ON reading_progress(user_id);
 CREATE INDEX idx_favorites_user ON favorites(user_id);
 
--- Insert default admin user (password: admin123)
-INSERT INTO users (email, password_hash, role, name)
-VALUES ('admin@library.kz', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin', 'Administrator');
+-- Bootstrap admin: NOT seeded via SQL anymore.
+-- First-run provisioning uses SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD env vars
+-- (see src/lib/seed.ts, called by server entrypoints).
+-- Do NOT hard-code credentials in version control.
 
 -- Insert sample chatbot knowledge
 INSERT INTO chatbot_knowledge (category, question, answer, language) VALUES

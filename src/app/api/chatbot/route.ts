@@ -3,6 +3,8 @@ import { generateChat } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { getMany, query } from "@/lib/db";
 import { v4 as uuid } from "uuid";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { readJson, v, validate } from "@/lib/validate";
 
 const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
   general: {
@@ -31,21 +33,59 @@ const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
   },
 };
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { message, mode = "general", language = "ru", history = [] } = body;
+const BLOCKED_PATTERNS = [
+  /(?:секс|порно|18\+|nude|nsfw)/i,
+  /(?:суицид|самоубий|убей себя|kill yourself)/i,
+  /(?:наркот|drugs|cocaine|марихуан)/i,
+];
 
-  if (!message) {
-    return NextResponse.json({ error: "Message is required" }, { status: 400 });
+const schema = v.object({
+  message: v.string({ min: 1, max: 2000, trim: true }),
+  mode: v.optional(v.enum(["general", "search", "education"] as const)),
+  language: v.optional(v.enum(["ru", "kk"] as const)),
+  history: v.optional(
+    v.array(
+      v.object({
+        role: v.enum(["user", "model", "assistant"] as const),
+        content: v.string({ min: 1, max: 4000 }),
+      }),
+      { max: 20 }
+    )
+  ),
+  sessionId: v.optional(v.string({ max: 100 })),
+});
+
+interface ChatBody {
+  message: string;
+  mode?: "general" | "search" | "education";
+  language?: "ru" | "kk";
+  history?: Array<{ role: "user" | "model" | "assistant"; content: string }>;
+  sessionId?: string;
+}
+
+export async function POST(request: NextRequest) {
+  const blocked = enforceRateLimit(request, { bucket: "chatbot", max: 20, windowMs: 60_000 });
+  if (blocked) return blocked;
+
+  const body = await readJson(request);
+  const parsed = validate<ChatBody>(body, schema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
+  }
+  const { message, mode = "general", language = "ru", history = [], sessionId: incomingSession } = parsed.data;
+
+  if (BLOCKED_PATTERNS.some((re) => re.test(message))) {
+    const polite = language === "kk"
+      ? "Кешіріңіз, мен бұл тақырыпта сөйлесе алмаймын. Кітаптар, кітапхана немесе үй жұмыстары туралы сұраңыз."
+      : "Извини, я не могу говорить на эту тему. Спроси меня о книгах, библиотеке или школьных заданиях.";
+    return NextResponse.json({ response: polite, source: "policy" });
   }
 
-  const sessionId = uuid();
+  const sessionId = incomingSession ?? uuid();
 
-  // Check token limit
   const withinLimit = await isWithinTokenLimit();
 
   if (!withinLimit) {
-    // Fallback to FAQ/knowledge base
     const faqResults = await getMany(
       `SELECT question, answer FROM chatbot_knowledge
        WHERE language = $1 AND (question ILIKE $2 OR category ILIKE $2)
@@ -55,27 +95,26 @@ export async function POST(request: NextRequest) {
 
     if (faqResults.length > 0) {
       const answers = (faqResults as Array<{ answer: string }>).map((r) => r.answer).join("\n\n");
-      return NextResponse.json({ response: answers, source: "faq" });
+      return NextResponse.json({ response: answers, source: "faq", sessionId });
     }
 
     const fallback = language === "kk"
       ? "Кешіріңіз, қазір ЖИ көмекшісі қол жетімсіз. Кітапханашымен байланысыңыз: +7 (710) 63-1-23-45"
       : "Извините, ИИ-помощник сейчас недоступен. Свяжитесь с библиотекарем: +7 (710) 63-1-23-45";
-    return NextResponse.json({ response: fallback, source: "fallback" });
+    return NextResponse.json({ response: fallback, source: "fallback", sessionId });
   }
 
   try {
     const systemPrompt = SYSTEM_PROMPTS[mode]?.[language] ?? SYSTEM_PROMPTS.general.ru;
 
-    const chatHistory = history.map((h: { role: string; content: string }) => ({
-      role: h.role === "user" ? "user" as const : "model" as const,
+    const chatHistory = history.map((h) => ({
+      role: h.role === "user" ? ("user" as const) : ("model" as const),
       content: h.content,
     }));
     chatHistory.push({ role: "user" as const, content: message });
 
     const result = await generateChat(chatHistory, systemPrompt, "chatbot");
 
-    // Log the interaction
     try {
       await query(
         `INSERT INTO chatbot_logs (session_id, user_message, bot_response, language, tokens_used)
@@ -83,19 +122,20 @@ export async function POST(request: NextRequest) {
         [sessionId, message, result.text, language, result.tokensUsed]
       );
     } catch {
-      // Silent fail on logging
+      // logging is best-effort
     }
 
     return NextResponse.json({
       response: result.text,
       tokensUsed: result.tokensUsed,
       source: "ai",
+      sessionId,
     });
   } catch (error) {
     console.error("Chatbot error:", error);
     const errorMsg = language === "kk"
       ? "Кешіріңіз, қате орын алды. Қайталап көріңіз."
       : "Извините, произошла ошибка. Попробуйте ещё раз.";
-    return NextResponse.json({ response: errorMsg, source: "error" });
+    return NextResponse.json({ response: errorMsg, source: "error", sessionId });
   }
 }

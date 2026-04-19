@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { KidsIcon, TeensIcon, YouthIcon } from "@/components/icons/age-icons";
 import type { AgeGroup } from "@/lib/utils";
+import { useAgeProfile } from "@/lib/age-profile";
 
 interface AgeProfileSwitcherProps {
   locale: string;
-  onChange?: (group: AgeGroup) => void;
+  onChange?: (group: AgeGroup | null) => void;
 }
 
 const profiles: Array<{
@@ -41,22 +41,12 @@ const profiles: Array<{
 ];
 
 export default function AgeProfileSwitcher({ locale, onChange }: AgeProfileSwitcherProps) {
-  const [active, setActive] = useState<AgeGroup | null>(null);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("ageProfile") as AgeGroup | null;
-    if (saved) setActive(saved);
-  }, []);
+  const { ageGroup: active, setAgeGroup } = useAgeProfile();
 
   const handleSelect = (group: AgeGroup) => {
     const newGroup = active === group ? null : group;
-    setActive(newGroup as AgeGroup);
-    if (newGroup) {
-      localStorage.setItem("ageProfile", newGroup);
-    } else {
-      localStorage.removeItem("ageProfile");
-    }
-    onChange?.(newGroup as AgeGroup);
+    setAgeGroup(newGroup);
+    onChange?.(newGroup);
   };
 
   return (

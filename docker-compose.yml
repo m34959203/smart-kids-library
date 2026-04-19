@@ -2,18 +2,18 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "3003:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/smart_kids_library
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-me-in-production}
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://100.118.110.5:3003
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHANNEL_ID=${TELEGRAM_CHANNEL_ID:-}
       - INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN:-}
       - INSTAGRAM_ACCOUNT_ID=${INSTAGRAM_ACCOUNT_ID:-}
-      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NEXT_PUBLIC_APP_URL=http://100.118.110.5:3003
       - GEMINI_DAILY_TOKEN_LIMIT=1500000
     depends_on:
       db:
@@ -30,7 +30,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
     ports:
-      - "5432:5432"
+      - "5440:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

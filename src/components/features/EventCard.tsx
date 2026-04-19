@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -29,7 +30,10 @@ export default function EventCard({ event, locale, compact = false }: EventCardP
   const month = date.toLocaleDateString(locale === "kk" ? "kk-KZ" : "ru-RU", { month: "short" });
   const time = date.toLocaleTimeString(locale === "kk" ? "kk-KZ" : "ru-RU", { hour: "2-digit", minute: "2-digit" });
 
-  const daysLeft = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const [daysLeft, setDaysLeft] = useState(0);
+  useEffect(() => {
+    setDaysLeft(Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  }, [date]);
 
   const typeLabels: Record<string, Record<string, string>> = {
     workshop: { ru: "Мастер-класс", kk: "Шеберлік сыныбы" },

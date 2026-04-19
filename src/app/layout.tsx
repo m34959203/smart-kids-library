@@ -7,12 +7,51 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Smart Kids Library Satpayev",
-  description: "Digital ecosystem for children's library in Satpayev, Kazakhstan",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: "Smart Kids Library · Детская библиотека Сатпаев",
+    template: "%s · Smart Kids Library",
+  },
+  description:
+    "Цифровая экосистема Детской и юношеской библиотеки города Сатпаев: онлайн-каталог, ИИ-консультант, голосовой помощник, сказки, события, геймификация.",
+  keywords: [
+    "библиотека",
+    "Сатпаев",
+    "Сәтбаев",
+    "детская библиотека",
+    "книги",
+    "ИИ-помощник",
+    "сказки",
+    "онлайн-каталог",
+    "Казахстан",
+  ],
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
+    apple: "/icons/icon-192x192.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Smart Kids Library Satpayev",
+    locale: "ru_RU",
+    alternateLocale: ["kk_KZ"],
+    url: APP_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  alternates: {
+    languages: {
+      ru: `${APP_URL}/ru`,
+      kk: `${APP_URL}/kk`,
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

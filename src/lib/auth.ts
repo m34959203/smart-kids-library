@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getOne } from "./db";
+import { ensureBootstrapAdmin } from "./seed";
 import crypto from "crypto";
 
 function hashPassword(password: string): string {
@@ -29,6 +30,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
+          await ensureBootstrapAdmin();
           const user = await getOne<UserRow>(
             "SELECT * FROM users WHERE email = $1",
             [credentials.email]

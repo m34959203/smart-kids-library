@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMany } from "@/lib/db";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
+  const blocked = enforceRateLimit(request, { bucket: "recommend", max: 60, windowMs: 60_000 });
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const ageGroup = searchParams.get("ageGroup");
   const locale = searchParams.get("locale") ?? "ru";

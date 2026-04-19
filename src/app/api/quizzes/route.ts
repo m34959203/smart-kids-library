@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { readJson, v, validate } from "@/lib/validate";
+
+const schema = v.object({
+  difficulty: v.optional(v.enum(["easy", "medium", "hard"] as const)),
+  language: v.optional(v.enum(["ru", "kk"] as const)),
+  count: v.optional(v.number({ int: true, min: 1, max: 15 })),
+});
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { difficulty = "medium", language = "ru", count = 5 } = body;
+  const blocked = enforceRateLimit(request, { bucket: "quizzes", max: 10, windowMs: 60_000 });
+  if (blocked) return blocked;
+
+  const parsed = validate<{ difficulty?: "easy" | "medium" | "hard"; language?: "ru" | "kk"; count?: number }>(await readJson(request), schema);
+  if (!parsed.ok) return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
+  const { difficulty = "medium", language = "ru", count = 5 } = parsed.data;
 
   const withinLimit = await isWithinTokenLimit();
   if (!withinLimit) {

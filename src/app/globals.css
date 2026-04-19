@@ -69,3 +69,68 @@ body {
 .animate-float { animation: float 3s ease-in-out infinite; }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 .animate-slide-up { animation: slide-up 0.3s ease-out; }
+
+/* WCAG: visible focus ring on every focusable element */
+*:focus-visible {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* WCAG: skip link visible only on focus */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.sr-only.focus\:not-sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: fixed;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High-contrast a11y theme */
+html.a11y-high-contrast,
+html.a11y-high-contrast body {
+  background: #000 !important;
+  color: #fff200 !important;
+}
+html.a11y-high-contrast a { color: #7fffd4 !important; text-decoration: underline; }
+html.a11y-high-contrast button,
+html.a11y-high-contrast input,
+html.a11y-high-contrast select,
+html.a11y-high-contrast textarea {
+  background: #111 !important;
+  color: #fff200 !important;
+  border: 2px solid #fff200 !important;
+}
+
+/* Dyslexic-friendly font scale when prefs request it */
+html[data-a11y-dyslexic="true"] body {
+  font-family: "Atkinson Hyperlegible", "Arial", sans-serif;
+  letter-spacing: 0.03em;
+  line-height: 1.7;
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-float, .animate-pulse-glow, .animate-slide-up { animation: none !important; }
+}
