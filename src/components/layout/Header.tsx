@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import AgeProfileSwitcher from "./AgeProfileSwitcher";
+import AgeMenu from "./AgeMenu";
 import { BookIcon } from "@/components/icons/age-icons";
 
 interface HeaderProps {
@@ -41,16 +42,8 @@ export default function Header({ locale, messages }: HeaderProps) {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
+            <AgeMenu locale={locale} fallback={navLinks} />
           </nav>
 
           {/* Right side */}
@@ -96,17 +89,8 @@ export default function Header({ locale, messages }: HeaderProps) {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-purple-100 animate-slide-up">
-          <nav className="max-w-7xl mx-auto px-4 py-4 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="max-w-7xl mx-auto px-4 py-4 space-y-1" aria-label="Mobile">
+            <AgeMenu locale={locale} fallback={navLinks} variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
             <Link
               href={`/${locale}/services`}
               className="block px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"

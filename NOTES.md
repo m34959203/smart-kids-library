@@ -88,6 +88,7 @@
 
 | Дата | Решение / событие | Файлы / PR | Кто |
 |------|-------------------|-----------|-----|
+| 2026-04-19 | **P1-хвосты** после повторного аудита: `AgeMenu` в Header переключает набор ссылок под выбранный age-профиль (fallback на дефолт, если профиль не выбран); `Breadcrumbs` компонент в (public) layout с RU/KK-словарём; `UpcomingEventsWidget` на главной (server component) — 4 ближайших события с обратным отсчётом; `src/lib/auto-social.ts` + хуки в `/api/news` POST/PUT и `/api/events` POST автоматически ставят пост в очередь `social_posts` для TG+IG при публикации (для событий — за 72 часа до старта). Фасетные фильтры (`suggestedFilters`) уже были в `SmartSearch`. Build 0 errors. | 6 файлов | claude |
 | 2026-04-19 | **Батч P0+P1+P2** закрыт: security-baseline (rate-limit, Zod-валидатор, CSP-заголовки, убран admin-сид), /api/upload hardening, age-profile Context, BookReader прогресс-sync, полный CRUD catalog/news/events + админ-модерация с backend, реальная analytics из `token_usage`/`chatbot_logs`/`visits`, chat escalation UI+API, `/api/translate` + `/api/simplify`, `AccessibilityToolbar` с high-contrast/dyslexic/TTS, `/api/posters` (SVG-афиша), `/api/social/schedule`+`/api/social/tick` worker с CRON_SECRET, `sitemap.ts`+`robots.ts`+`opengraph-image.tsx`+JSON-LD, service worker `sw.js`+`offline.html`, WCAG focus-visible/skip-link/prefers-reduced-motion. **Геймификация**: `points_events`+`achievements`+`user_streaks`, `/api/gamification` (me/leaderboard/award), `GamificationPanel` на `/profile`, daily-checkin через `/api/visits`. **Build: 0 ошибок**, lint: 0 ошибок (7 предупреждений `<img>`/`_locale`). | ~40 файлов создано/изменено | claude |
 | 2026-04-19 | Создан NOTES.md как живой документ проекта | `NOTES.md` | claude + m34959203 |
 | 2026-04-19 | Репозиторий переведён в **PUBLIC** | GH settings | m34959203 |
@@ -129,6 +130,13 @@
 - [ ] PDF-парсер каталога (ТЗ прямо упоминает) — `pdf-parse` + bulk-импорт в `admin/catalog`.
 - [ ] Интеграции с `Kazlib.kz`/`Elibra.kz`/`Nabrk.kz` (открытые API/каталоги) для импорта метаданных книг.
 - [ ] Тесты: хотя бы smoke Playwright на каталог + чат + профиль.
+- [ ] ML-рекомендации (пока `/api/recommend` отдаёт рандом по возрасту).
+- [ ] Глобальный search-bar с autocomplete по каталогу+событиям+новостям (компонент `SearchBar` есть, глобальной интеграции нет).
+- [ ] Admin UI для system-prompts и `BLOCKED_PATTERNS` (сейчас в коде).
+- [ ] Admin UI для ввода TG/IG токенов (сейчас только `.env`).
+- [ ] Redis/KV-бэкенд для rate-limit (in-memory не переживёт мульти-инстанс деплой).
+- [ ] GA4/Яндекс.Метрика (сейчас только собственные `visits`).
+- [ ] Lighthouse + axe-core прогон, Core Web Vitals ≤ 3с.
 
 ## 9. Полезные ссылки / команды
 

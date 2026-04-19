@@ -10,6 +10,7 @@ import ServiceWorkerRegister from "@/components/features/ServiceWorkerRegister";
 import VisitTracker from "@/components/features/VisitTracker";
 import { JsonLd, organizationSchema } from "@/lib/jsonld";
 import SessionProviderWrapper from "@/components/providers/SessionProviderWrapper";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 export default async function PublicLayout({
   children,
@@ -28,6 +29,7 @@ export default async function PublicLayout({
         <JsonLd data={organizationSchema()} />
         <SkipLink locale={validLocale} />
         <Header locale={validLocale} messages={messages as Record<string, Record<string, string>>} />
+        <Breadcrumbs />
         <main id="main" tabIndex={-1} className="flex-1 pb-20 lg:pb-0 outline-none">
           {children}
         </main>

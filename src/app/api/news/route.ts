@@ -3,6 +3,7 @@ import { getMany, getOne, query } from "@/lib/db";
 import { requireStaff, getCurrentUser } from "@/lib/auth-guard";
 import { readJson, v, validate } from "@/lib/validate";
 import { slugify } from "@/lib/utils";
+import { queueNewsAutoPost } from "@/lib/auto-social";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -99,7 +100,21 @@ export async function POST(request: NextRequest) {
     ]
   );
 
-  return NextResponse.json({ id: result.rows[0]?.id, slug });
+  const newsId = result.rows[0]?.id;
+  if (newsId && b.status === "published") {
+    try {
+      await queueNewsAutoPost({
+        newsId,
+        title: b.title_ru,
+        excerpt: b.excerpt_ru ?? null,
+        imageUrl: b.image_url ?? null,
+      });
+    } catch (e) {
+      console.error("Auto-post queue failed:", e);
+    }
+  }
+
+  return NextResponse.json({ id: newsId, slug });
 }
 
 export async function PUT(request: NextRequest) {
@@ -112,6 +127,12 @@ export async function PUT(request: NextRequest) {
   if (!parsed.ok) return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
   const b = parsed.data;
   const slug = b.slug ? slugify(b.slug) : undefined;
+
+  // Track published transition to auto-queue SMM only once per publication
+  const before = await getOne<{ status: string; published_at: string | null }>(
+    "SELECT status, published_at FROM news WHERE id = $1",
+    [body.id]
+  );
 
   await query(
     `UPDATE news SET
@@ -137,6 +158,22 @@ export async function PUT(request: NextRequest) {
       b.status ?? null,
     ]
   );
+
+  const transitionedToPublished =
+    b.status === "published" && before && before.status !== "published";
+  if (transitionedToPublished) {
+    try {
+      await queueNewsAutoPost({
+        newsId: body.id,
+        title: b.title_ru,
+        excerpt: b.excerpt_ru ?? null,
+        imageUrl: b.image_url ?? null,
+      });
+    } catch (e) {
+      console.error("Auto-post queue failed:", e);
+    }
+  }
+
   return NextResponse.json({ success: true });
 }
 

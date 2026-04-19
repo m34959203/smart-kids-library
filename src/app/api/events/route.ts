@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getMany, getOne, query } from "@/lib/db";
 import { requireStaff } from "@/lib/auth-guard";
 import { readJson, v, validate } from "@/lib/validate";
+import { queueEventAutoPost } from "@/lib/auto-social";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -109,7 +110,25 @@ export async function POST(request: NextRequest) {
       b.status ?? "active",
     ]
   );
-  return NextResponse.json({ id: result.rows[0]?.id });
+
+  const eventId = result.rows[0]?.id;
+  if (eventId && (b.status ?? "active") === "active") {
+    try {
+      await queueEventAutoPost({
+        eventId,
+        title: b.title_ru,
+        description: b.description_ru ?? null,
+        startDate: b.start_date,
+        location: b.location ?? null,
+        imageUrl: b.image_url ?? null,
+        leadHours: 72,
+      });
+    } catch (e) {
+      console.error("Event auto-post queue failed:", e);
+    }
+  }
+
+  return NextResponse.json({ id: eventId });
 }
 
 export async function PUT(request: NextRequest) {

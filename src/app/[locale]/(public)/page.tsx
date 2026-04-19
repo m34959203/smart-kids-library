@@ -3,6 +3,7 @@ import { t } from "@/lib/i18n";
 import Link from "next/link";
 import BookRecommendations from "@/components/features/BookRecommendations";
 import ContextualHints from "@/components/features/ContextualHints";
+import UpcomingEventsWidget from "@/components/features/UpcomingEventsWidget";
 
 export default async function HomePage({
   params,
@@ -113,6 +114,9 @@ export default async function HomePage({
           ))}
         </div>
       </section>
+
+      {/* Upcoming events */}
+      <UpcomingEventsWidget locale={validLocale} />
 
       {/* Book Recommendations */}
       <section className="max-w-7xl mx-auto px-4 mt-12">
