@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 
 interface BookCardProps {
@@ -49,8 +50,14 @@ export default function BookCard({
   isAvailable = true,
   locale,
 }: BookCardProps) {
-  const hasRealCover = Boolean(coverUrl && coverUrl.trim());
-  const finalCover = hasRealCover ? coverUrl! : pickFallbackCover(id, title);
+  const fallbackCover = pickFallbackCover(id, title);
+  const providedCover = coverUrl && coverUrl.trim() ? coverUrl : null;
+
+  // Если внешняя обложка (OpenLibrary и т.п.) не загрузилась —
+  // переключаемся на локальную сгенерированную.
+  const [imgFailed, setImgFailed] = useState(false);
+  const hasRealCover = Boolean(providedCover) && !imgFailed;
+  const finalCover = hasRealCover ? providedCover! : fallbackCover;
 
   return (
     <Link href={`/${locale}/catalog/${id}`} className="group block">
@@ -72,6 +79,9 @@ export default function BookCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             loading="lazy"
+            onError={() => {
+              if (!imgFailed) setImgFailed(true);
+            }}
           />
 
           {/* Для fallback-обложек — накладываем название сверху, чтобы обложка была «персонализированной» */}
