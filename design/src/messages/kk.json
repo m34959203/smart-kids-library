@@ -1,0 +1,219 @@
+{
+  "common": {
+    "appName": "Smart Kids Library Сатпаев",
+    "appShort": "Smart Kids Library",
+    "search": "Іздеу",
+    "searchPlaceholder": "Кітаптар, оқиғалар іздеу...",
+    "loading": "Жүктелуде...",
+    "error": "Қате",
+    "save": "Сақтау",
+    "cancel": "Болдырмау",
+    "delete": "Жою",
+    "edit": "Өңдеу",
+    "create": "Жасау",
+    "back": "Артқа",
+    "next": "Келесі",
+    "prev": "Алдыңғы",
+    "viewAll": "Барлығын көру",
+    "readMore": "Толығырақ",
+    "language": "Тіл",
+    "russian": "Русский",
+    "kazakh": "Қазақша",
+    "login": "Кіру",
+    "logout": "Шығу",
+    "register": "Тіркелу",
+    "profile": "Профиль",
+    "home": "Басты бет",
+    "noResults": "Ештеңе табылмады",
+    "age": "Жас"
+  },
+  "nav": {
+    "home": "Басты бет",
+    "catalog": "Каталог",
+    "news": "Жаңалықтар",
+    "events": "Оқиғалар",
+    "about": "Кітапхана туралы",
+    "resources": "Ресурстар",
+    "rules": "Ережелер",
+    "contacts": "Байланыс",
+    "kids": "Балаларға",
+    "services": "Қызметтер",
+    "admin": "Админ"
+  },
+  "home": {
+    "hero": "Smart Kids Library-ге қош келдіңіз!",
+    "heroSubtitle": "Біз бен білім әлемін ашыңыз",
+    "selectAge": "Жас тобын таңдаңыз",
+    "popularBooks": "Танымал кітаптар",
+    "upcomingEvents": "Жақын оқиғалар",
+    "latestNews": "Соңғы жаңалықтар",
+    "forYou": "Сіз үшін ұсыныстар",
+    "startReading": "Оқуды бастау",
+    "exploreMore": "Көбірек білу"
+  },
+  "catalog": {
+    "title": "Кітаптар каталогы",
+    "search": "Кітап іздеу...",
+    "smartSearch": "Ақылды іздеу: қандай кітап іздеп жатқаныңызды сипаттаңыз",
+    "filters": "Сүзгілер",
+    "genre": "Жанр",
+    "age": "Жас",
+    "language": "Тіл",
+    "available": "Қол жетімді",
+    "unavailable": "Қол жетімсіз",
+    "readOnline": "Онлайн оқу",
+    "addFavorite": "Таңдаулыларға",
+    "removeFavorite": "Таңдаулылардан алу",
+    "pages": "бет",
+    "year": "Жыл",
+    "author": "Автор",
+    "description": "Сипаттама",
+    "totalBooks": "Барлық кітаптар"
+  },
+  "reader": {
+    "title": "Оқу",
+    "page": "Бет",
+    "of": "ішінен",
+    "bookmark": "Бетбелгі",
+    "fontSize": "Қаріп өлшемі",
+    "theme": "Тақырып",
+    "progress": "Прогресс"
+  },
+  "events": {
+    "title": "Оқиғалар күнтізбесі",
+    "upcoming": "Жақын",
+    "past": "Өткен",
+    "today": "Бүгін",
+    "workshop": "Шеберлік сыныбы",
+    "authorMeeting": "Автормен кездесу",
+    "contest": "Конкурс",
+    "exhibition": "Көрме",
+    "reading": "Оқу",
+    "register": "Жазылу",
+    "participants": "қатысушы",
+    "location": "Орын",
+    "time": "Уақыт",
+    "daysLeft": "күн қалды",
+    "filterByAge": "Жас бойынша",
+    "filterByType": "Түр бойынша"
+  },
+  "kids": {
+    "title": "Балалар бөлімі",
+    "stories": "Ертегі генераторы",
+    "quizzes": "Әдеби викториналар",
+    "workshop": "Шығармашылық шеберхана",
+    "coloring": "Бояулар",
+    "storiesDesc": "ЖИ көмегімен өз ертегіңізді жасаңыз!",
+    "quizzesDesc": "Әдебиет бойынша білімді тексеріңіз!",
+    "workshopDesc": "Көмекшімен өлең мен әңгіме жаз!",
+    "coloringDesc": "Сүйікті кітаптардан бояулар!"
+  },
+  "stories": {
+    "title": "Ертегі генераторы",
+    "childName": "Кейіпкер аты",
+    "theme": "Ертегі тақырыбы",
+    "character": "Басты кейіпкер",
+    "ageLevel": "Жас",
+    "generate": "Ертегі жасау!",
+    "generating": "Сиқырлы оқиға жасалуда...",
+    "listen": "Тыңдау",
+    "chooseNext": "Әрі қарай не болады?",
+    "saveStory": "Оқиғаны сақтау",
+    "themes": {
+      "adventure": "Шытырман оқиға",
+      "friendship": "Достық",
+      "magic": "Сиқыр",
+      "nature": "Табиғат",
+      "space": "Ғарыш",
+      "animals": "Жануарлар"
+    }
+  },
+  "quiz": {
+    "title": "Әдеби викториналар",
+    "start": "Бастау",
+    "question": "Сұрақ",
+    "correct": "Дұрыс!",
+    "incorrect": "Дұрыс емес!",
+    "score": "Ұпай",
+    "results": "Нәтижелер",
+    "tryAgain": "Қайта байқап көру",
+    "easy": "Оңай",
+    "medium": "Орташа",
+    "hard": "Қиын"
+  },
+  "workshop": {
+    "title": "Шығармашылық шеберхана",
+    "writeStory": "Әңгіме жазу",
+    "writePoem": "Өлең жазу",
+    "getHelp": "ЖИ көмегі",
+    "suggestRhyme": "Ұйқас ұсыну",
+    "continue": "Оқиғаны жалғастыру"
+  },
+  "chat": {
+    "title": "Кітапханашы-көмекші",
+    "placeholder": "Сұрақ қойыңыз...",
+    "welcome": "Сәлем! Мен цифрлық кітапханашымын. Нені көмектесе аламын?",
+    "thinking": "Ойланамын...",
+    "voiceInput": "Дауыстық енгізу",
+    "modes": {
+      "general": "Жалпы",
+      "search": "Кітап іздеу",
+      "education": "Оқу"
+    },
+    "escalate": "Кітапханашымен байланысу"
+  },
+  "profile": {
+    "title": "Жеке кабинет",
+    "readingHistory": "Оқу тарихы",
+    "favorites": "Таңдаулылар",
+    "quizResults": "Викторина нәтижелері",
+    "stories": "Менің оқиғаларым",
+    "settings": "Баптаулар"
+  },
+  "about": {
+    "title": "Кітапхана туралы",
+    "description": "Сатпаев қаласының балалар кітапханасы — әрбір бала жанына жақын кітап табатын орын.",
+    "mission": "Біздің миссиямыз",
+    "missionText": "Сатпаев қаласының балалары мен жасөспірімдерінде оқуға деген сүйіспеншілікті дамыту.",
+    "history": "Тарих",
+    "team": "Біздің команда",
+    "hours": "Жұмыс уақыты",
+    "hoursText": "Дс-Жм: 9:00-18:00, Сб: 10:00-16:00"
+  },
+  "contacts": {
+    "title": "Байланыс",
+    "address": "Мекенжай",
+    "addressText": "Сатпаев қ., Абай к-сі, 1",
+    "phone": "Телефон",
+    "email": "Email",
+    "socialMedia": "Әлеуметтік желілер"
+  },
+  "rules": {
+    "title": "Кітапхана ережелері"
+  },
+  "resources": {
+    "title": "Электрондық ресурстар"
+  },
+  "services": {
+    "title": "Онлайн қызметтер"
+  },
+  "admin": {
+    "dashboard": "Басқару тақтасы",
+    "catalog": "Каталогты басқару",
+    "news": "Жаңалықтарды басқару",
+    "events": "Оқиғаларды басқару",
+    "knowledge": "ЖИ білім базасы",
+    "social": "Әлеуметтік желілер",
+    "analytics": "Аналитика",
+    "moderation": "Модерация",
+    "totalVisits": "Барлық кірулер",
+    "aiUsage": "ЖИ пайдалану",
+    "popularBooks": "Танымал кітаптар",
+    "tokensUsed": "Пайдаланылған токендер"
+  },
+  "footer": {
+    "copyright": "Smart Kids Library Сатпаев",
+    "rights": "Барлық құқықтар қорғалған",
+    "address": "Сатпаев қ., Қарағанды, Қазақстан"
+  }
+}

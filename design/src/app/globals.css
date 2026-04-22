@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+/* =========================================================
+   Smart Kids Library — редизайн
+   Палитра: тёплый кремовый фон + глубокий лесной бирюзовый
+   (primary) + тёплый коралл (accent). Всего 4 цвета + нейтрали.
+   ========================================================= */
+
+:root {
+  /* Фон и поверхности */
+  --background: #faf5ea;         /* тёплый кремовый */
+  --surface: #ffffff;
+  --muted: #f3ecdb;              /* тёплый песок */
+  --foreground: #1a1712;         /* глубокие чернила */
+  --foreground-muted: #5b5347;   /* тёплый серо-коричневый */
+  --border: #e7dfcd;             /* мягкий бежевый бордер */
+
+  /* Бренд */
+  --primary: #2f6353;            /* глубокий лесной тил */
+  --primary-light: #d9ebe4;
+  --primary-dark: #1c3a31;
+  --accent: #e25e2e;             /* тёплый коралл */
+  --accent-light: #fce3d1;
+
+  /* Семантика */
+  --success: #3a7b66;
+  --warning: #c98a1f;
+  --info: #2c6e9b;
+  --danger: #c44536;
+
+  --radius: 14px;
+  --radius-lg: 22px;
+
+  /* Тени — мягкие, «бумажные» */
+  --shadow-sm: 0 1px 2px rgba(26, 23, 18, 0.04);
+  --shadow-md: 0 4px 12px rgba(26, 23, 18, 0.06), 0 1px 3px rgba(26, 23, 18, 0.04);
+  --shadow-lg: 0 16px 40px -12px rgba(26, 23, 18, 0.12), 0 4px 10px rgba(26, 23, 18, 0.05);
+}
+
+@theme inline {
+  /* Основные токены */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+
+  /* Шрифты */
+  --font-sans: var(--font-geist-sans), "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ------------------------------------------------------
+     Глобальный ребрендинг: переопределяем Tailwind-палитру.
+     purple-* -> лесной тил (основной бренд)
+     pink-*   -> тёплый коралл (акцент)
+     Существующий код продолжает работать, но визуально
+     сайт больше не «фиолетовый» — он тёплый и «библиотечный».
+     ------------------------------------------------------ */
+  --color-purple-50:  #f1f7f5;
+  --color-purple-100: #d9ebe4;
+  --color-purple-200: #b2d6c8;
+  --color-purple-300: #84baa7;
+  --color-purple-400: #5a9985;
+  --color-purple-500: #3a7b66;
+  --color-purple-600: #2f6353;
+  --color-purple-700: #264f42;
+  --color-purple-800: #1c3a31;
+  --color-purple-900: #0f241e;
+
+  --color-pink-50:  #fef4ed;
+  --color-pink-100: #fce3d1;
+  --color-pink-200: #f9c3a2;
+  --color-pink-300: #f5a073;
+  --color-pink-400: #f07c4b;
+  --color-pink-500: #e25e2e;
+  --color-pink-600: #bf4922;
+  --color-pink-700: #963820;
+  --color-pink-800: #6f2b1c;
+  --color-pink-900: #4a1e15;
+
+  /* Чуть тёплый indigo, чтобы сочетался с тилом */
+  --color-indigo-900: #152a23;
+  --color-indigo-800: #1d3930;
+  --color-indigo-700: #264f42;
+
+  /* Скругления */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+}
+
+/* ============================ База ============================ */
+html {
+  background: var(--background);
+  color-scheme: light;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Editorial-заголовки: тёплый serif */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* ============================ Скроллбар ============================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbbfa4;
+  border-radius: 999px;
+  border: 2px solid var(--muted);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ============================ Анимации ============================ */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(47, 99, 83, 0.35); }
+  50%      { box-shadow: 0 0 0 10px rgba(47, 99, 83, 0); }
+}
+@keyframes slide-up {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-float       { animation: float 4s ease-in-out infinite; }
+.animate-pulse-glow  { animation: pulse-glow 2.2s ease-in-out infinite; }
+.animate-slide-up    { animation: slide-up 0.35s ease-out; }
+.animate-fade-in     { animation: fade-in 0.4s ease-out; }
+
+/* ============================ Утилиты редизайна ============================ */
+.paper-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+.paper-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #d8cfbc;
+}
+
+.section-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.display-hero {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+}
+
+/* Бумажная «библиотечная» текстура — очень лёгкая */
+.bg-paper {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(rgba(26, 23, 18, 0.025) 1px, transparent 1px),
+    radial-gradient(rgba(26, 23, 18, 0.02) 1px, transparent 1px);
+  background-position: 0 0, 10px 10px;
+  background-size: 20px 20px;
+}
+
+/* ============================ WCAG ============================ */
+*:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.sr-only.focus\:not-sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: fixed;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High-contrast a11y theme */
+html.a11y-high-contrast,
+html.a11y-high-contrast body {
+  background: #000 !important;
+  color: #fff200 !important;
+}
+html.a11y-high-contrast a { color: #7fffd4 !important; text-decoration: underline; }
+html.a11y-high-contrast button,
+html.a11y-high-contrast input,
+html.a11y-high-contrast select,
+html.a11y-high-contrast textarea {
+  background: #111 !important;
+  color: #fff200 !important;
+  border: 2px solid #fff200 !important;
+}
+
+/* Dyslexic-friendly font scale */
+html[data-a11y-dyslexic="true"] body {
+  font-family: "Atkinson Hyperlegible", "Arial", sans-serif;
+  letter-spacing: 0.03em;
+  line-height: 1.7;
+}
+html[data-a11y-dyslexic="true"] h1,
+html[data-a11y-dyslexic="true"] h2,
+html[data-a11y-dyslexic="true"] h3 {
+  font-family: inherit;
+}
+
+/* Motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-float, .animate-pulse-glow, .animate-slide-up, .animate-fade-in { animation: none !important; }
+}
