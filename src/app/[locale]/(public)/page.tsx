@@ -466,23 +466,6 @@ function HeroIllustration({ kk }: { kk: boolean }) {
         />
       </div>
 
-      {/* круглая «печать» */}
-      <div
-        className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full flex items-center justify-center text-center animate-float"
-        style={{
-          backgroundColor: "var(--accent)",
-          color: "white",
-          boxShadow: "var(--shadow-lg)",
-        }}
-      >
-        <div className="leading-tight">
-          <div className="font-display text-2xl font-semibold">55</div>
-          <div className="text-[9px] tracking-widest uppercase">
-            {kk ? "жыл" : "лет"}
-          </div>
-        </div>
-      </div>
-
       {/* декоративный лейбл */}
       <div
         className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase rotate-[6deg] z-10"
