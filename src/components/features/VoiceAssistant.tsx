@@ -21,28 +21,26 @@ export default function VoiceAssistant({ locale, onResult, voiceLoop = !onResult
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const speak = useCallback(async (text: string, lang: "ru" | "kk") => {
+    // Только Gemini TTS — браузерный SpeechSynthesis удалён по требованию.
+    // Если Gemini не отвечает — показываем ответ только текстом.
     try {
       const r = await fetch("/api/stories/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, language: lang }),
       });
-      if (r.ok) {
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        if (audioRef.current) audioRef.current.pause();
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        await audio.play();
+      if (!r.ok) {
+        console.warn("Gemini TTS unavailable", r.status);
         return;
       }
-    } catch {
-      /* fallback */
-    }
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = lang === "kk" ? "kk-KZ" : "ru-RU";
-      window.speechSynthesis.speak(utt);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      if (audioRef.current) audioRef.current.pause();
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      await audio.play();
+    } catch (e) {
+      console.warn("Gemini TTS error", e);
     }
   }, []);
 

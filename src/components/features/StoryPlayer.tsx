@@ -9,67 +9,54 @@ interface StoryPlayerProps {
   audioUrl?: string;
 }
 
+/**
+ * Озвучивание сказок только через Gemini TTS (browser SpeechSynthesis удалён).
+ * Если TTS недоступен — показываем сообщение, без fallback.
+ */
 export default function StoryPlayer({ text, locale, audioUrl }: StoryPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [useServerTTS, setUseServerTTS] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  const playWithWebSpeech = useCallback(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-
-    if (isPlaying) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = locale === "kk" ? "kk-KZ" : "ru-RU";
-    utterance.rate = 0.9;
-    utterance.pitch = 1.1;
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-    setIsPlaying(true);
-  }, [text, locale, isPlaying]);
-
-  const playWithServerTTS = useCallback(async () => {
+  const playGemini = useCallback(async () => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
       return;
     }
-
+    setLoading(true);
+    setUnavailable(false);
     try {
-      const response = await fetch("/api/stories/tts", {
+      const r = await fetch("/api/stories/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.substring(0, 500), language: locale }),
+        body: JSON.stringify({ text: text.substring(0, 1000), language: locale }),
       });
-
-      if (!response.ok) {
-        playWithWebSpeech();
+      if (!r.ok) {
+        setUnavailable(true);
         return;
       }
-
-      const blob = await response.blob();
+      const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => { setIsPlaying(false); URL.revokeObjectURL(url); };
-      audio.play();
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(url);
+      };
+      await audio.play();
       setIsPlaying(true);
     } catch {
-      playWithWebSpeech();
+      setUnavailable(true);
+    } finally {
+      setLoading(false);
     }
-  }, [text, locale, isPlaying, playWithWebSpeech]);
+  }, [text, locale, isPlaying]);
 
   const handlePlay = () => {
     if (audioUrl) {
-      if (audioRef.current) {
+      if (audioRef.current && isPlaying) {
         audioRef.current.pause();
         setIsPlaying(false);
         return;
@@ -81,18 +68,20 @@ export default function StoryPlayer({ text, locale, audioUrl }: StoryPlayerProps
       setIsPlaying(true);
       return;
     }
-
-    if (useServerTTS) {
-      playWithServerTTS();
-    } else {
-      playWithWebSpeech();
-    }
+    playGemini();
   };
 
   return (
-    <div className="flex items-center gap-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-3">
-      <Button onClick={handlePlay} variant="primary" size="sm">
-        {isPlaying ? (
+    <div
+      className="flex items-center gap-3 rounded-2xl p-3"
+      style={{ background: "var(--primary-light)", border: "1px solid var(--border)" }}
+    >
+      <Button onClick={handlePlay} variant="primary" size="sm" disabled={loading || unavailable}>
+        {loading ? (
+          <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="40 60" />
+          </svg>
+        ) : isPlaying ? (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -103,17 +92,15 @@ export default function StoryPlayer({ text, locale, audioUrl }: StoryPlayerProps
           </svg>
         )}
       </Button>
-      <span className="text-sm text-purple-700 font-medium">
-        {isPlaying
-          ? (locale === "kk" ? "Ойнатылуда..." : "Воспроизведение...")
-          : (locale === "kk" ? "Тыңдау" : "Послушать")}
+      <span className="text-sm font-medium" style={{ color: "var(--primary-dark)" }}>
+        {unavailable
+          ? locale === "kk" ? "Дауыс уақытша қол жетімсіз" : "Озвучка временно недоступна"
+          : loading
+          ? locale === "kk" ? "Дайындалуда…" : "Готовлю аудио…"
+          : isPlaying
+          ? locale === "kk" ? "Ойнатылуда…" : "Воспроизведение…"
+          : locale === "kk" ? "Тыңдау (Gemini AI)" : "Послушать (Gemini AI)"}
       </span>
-      <button
-        onClick={() => setUseServerTTS(!useServerTTS)}
-        className="ml-auto text-xs text-purple-400 hover:text-purple-600"
-      >
-        {useServerTTS ? "AI Voice" : "Browser Voice"}
-      </button>
     </div>
   );
 }

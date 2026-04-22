@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   locale: string;
@@ -65,23 +65,42 @@ export default function AccessibilityToolbar({ locale }: Props) {
     });
   };
 
-  const readPage = () => {
-    if (!("speechSynthesis" in window)) return;
-    if (reading) {
-      window.speechSynthesis.cancel();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const readPage = async () => {
+    if (reading && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
       setReading(false);
       return;
     }
     const main = document.getElementById("main");
     if (!main) return;
     const text = main.innerText.slice(0, 4000);
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = locale === "kk" ? "kk-KZ" : "ru-RU";
-    u.rate = 1;
-    u.onend = () => setReading(false);
-    u.onerror = () => setReading(false);
-    window.speechSynthesis.speak(u);
     setReading(true);
+    try {
+      const r = await fetch("/api/stories/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, language: locale === "kk" ? "kk" : "ru" }),
+      });
+      if (!r.ok) {
+        setReading(false);
+        return;
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setReading(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+      await audio.play();
+    } catch {
+      setReading(false);
+    }
   };
 
   const labels = {
