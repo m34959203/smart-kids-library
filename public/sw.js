@@ -1,5 +1,5 @@
 /* Smart Kids Library — service worker */
-const CACHE_VERSION = "skl-v1";
+const CACHE_VERSION = "skl-v2-redesign";
 const APP_SHELL = [
   "/",
   "/ru",
