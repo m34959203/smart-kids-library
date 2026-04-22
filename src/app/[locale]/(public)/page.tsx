@@ -67,6 +67,7 @@ export default async function HomePage({
       accent: "var(--accent)",
       swatch: "#fce3d1",
       image: "/illustrations/age-6-9.jpg",
+      href: `/${validLocale}/kids`,
     },
     {
       group: "10-13",
@@ -76,6 +77,7 @@ export default async function HomePage({
       accent: "var(--primary)",
       swatch: "#d9ebe4",
       image: "/illustrations/age-10-13.jpg",
+      href: `/${validLocale}/kids/club`,
     },
     {
       group: "14-17",
@@ -85,6 +87,7 @@ export default async function HomePage({
       accent: "#1c3a31",
       swatch: "#e4d9c2",
       image: "/illustrations/age-14-17.jpg",
+      href: `/${validLocale}/kids/exam`,
     },
   ];
 
@@ -221,7 +224,7 @@ export default async function HomePage({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {ageGroups.map((ag, i) => (
-              <Link key={ag.group} href={`/${validLocale}/catalog?age=${ag.group}`} className="group block">
+              <Link key={ag.group} href={ag.href} className="group block">
                 <article
                   className="h-full rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 flex flex-col"
                   style={{

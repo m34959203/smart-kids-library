@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import AgeProfileSwitcher from "./AgeProfileSwitcher";
 import AgeMenu from "./AgeMenu";
 import GlobalSearch from "@/components/features/GlobalSearch";
-import { BookIcon } from "@/components/icons/age-icons";
 
 interface HeaderProps {
   locale: string;
@@ -40,10 +40,17 @@ export default function Header({ locale, messages }: HeaderProps) {
           {/* Логотип — editorial wordmark */}
           <Link href={`/${locale}`} className="flex items-center gap-3 group">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all"
-              style={{ backgroundColor: "var(--primary)" }}
+              className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all"
+              style={{ backgroundColor: "var(--surface)" }}
             >
-              <BookIcon className="w-5 h-5" />
+              <Image
+                src="/illustrations/ai-helper.jpg"
+                alt="Smart Kids Library"
+                fill
+                sizes="40px"
+                className="object-cover"
+                priority
+              />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
               <span className="font-display font-semibold text-[15px] tracking-tight text-foreground">
