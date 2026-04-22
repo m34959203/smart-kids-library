@@ -14,37 +14,31 @@ import { getOne } from "@/lib/db";
  * то что уже импортировано в catalog), либо дашборд активных читателей
  * которые ходят в библиотеку, а не только зарегистрированных в системе.
  */
-async function getHomeStats(): Promise<{ books: string; readers: string; years: string }> {
+async function getHomeStats(): Promise<{ books: string; readers: string }> {
   let booksCount = 0;
   let usersCount = 0;
-  let founded = 2006;
   let manualBooks: string | null = null;
   let manualReaders: string | null = null;
 
   try {
-    const [b, u, f, mb, mr] = await Promise.all([
+    const [b, u, mb, mr] = await Promise.all([
       getOne<{ count: string }>("SELECT COUNT(*)::text AS count FROM books"),
       getOne<{ count: string }>("SELECT COUNT(*)::text AS count FROM users WHERE role IN ('reader','user') OR role IS NULL"),
-      getOne<{ value: string }>("SELECT value FROM site_settings WHERE key='library_founded'"),
       getOne<{ value: string }>("SELECT value FROM site_settings WHERE key='library_books_total'"),
       getOne<{ value: string }>("SELECT value FROM site_settings WHERE key='library_readers_total'"),
     ]);
     booksCount = parseInt(b?.count ?? "0", 10);
     usersCount = parseInt(u?.count ?? "0", 10);
-    if (f?.value) founded = parseInt(f.value, 10) || 2006;
     manualBooks = mb?.value || null;
     manualReaders = mr?.value || null;
   } catch {
     /* fall through to defaults */
   }
 
-  // Если админ задал «manual» в site_settings — показываем его.
-  // Иначе — реальный COUNT, но если 0 — прочерк, чтобы не выглядело сиротливо.
   const fmt = (n: number) => (n > 0 ? n.toLocaleString("ru-RU") : "—");
   const books = manualBooks?.trim() || fmt(booksCount);
   const readers = manualReaders?.trim() || fmt(usersCount);
-  const years = String(Math.max(0, new Date().getFullYear() - founded));
-  return { books, readers, years };
+  return { books, readers };
 }
 
 export default async function HomePage({
@@ -132,7 +126,7 @@ export default async function HomePage({
             <div className="md:col-span-7">
               <div className="section-eyebrow mb-6 flex items-center gap-3">
                 <span className="inline-block w-8 h-px bg-current" aria-hidden />
-                {kk ? `Сәтбаев қаласы · ${stats.years} жыл` : `Город Сатпаев · с 2006`}
+                {kk ? `Сәтбаев қаласы · 2006 жылдан` : `Город Сатпаев · с 2006`}
               </div>
               <h1 className="display-hero text-[44px] md:text-[72px] leading-[1.02] text-foreground">
                 {kk ? "Оқу әлеміне" : "Библиотека,"}
@@ -174,11 +168,10 @@ export default async function HomePage({
                   library_books_total / library_readers_total можно вручную задать
                   через /admin/knowledge → tab Tone (или напрямую settings),
                   иначе показываются реальные COUNT(*). */}
-              <dl className="mt-12 grid grid-cols-3 gap-6 max-w-lg">
+              <dl className="mt-12 grid grid-cols-2 gap-6 max-w-md">
                 {[
                   { k: stats.books, v: kk ? "кітап қорда" : "книг в фонде" },
                   { k: stats.readers, v: kk ? "белсенді оқырман" : "активных читателей" },
-                  { k: stats.years, v: kk ? "жылдық тарих" : "лет истории" },
                 ].map((m) => (
                   <div key={m.v}>
                     <dt className="font-display text-3xl md:text-4xl font-semibold" style={{ color: "var(--primary)" }}>{m.k}</dt>

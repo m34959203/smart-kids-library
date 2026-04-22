@@ -27,6 +27,8 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
   const [escalationStatus, setEscalationStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [escalationMessage, setEscalationMessage] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [tipIndex, setTipIndex] = useState<number | null>(null);
+  const [tipDismissed, setTipDismissed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const labels = locale === "kk"
@@ -45,6 +47,12 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
         cancel: "Болдырмау",
         escalationSent: "Сұрақ жіберілді!",
         escalationError: "Қате. Қайталап көріңіз.",
+        tipClose: "Жабу",
+        ctas: [
+          "Не оқуға? Мен көмектесемін",
+          "Кітап туралы сұрақ қойыңыз",
+          "Рефератпен көмек керек пе?",
+        ],
       }
     : {
         title: "Библиотекарь-помощник",
@@ -61,11 +69,46 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
         cancel: "Отмена",
         escalationSent: "Вопрос отправлен!",
         escalationError: "Ошибка. Попробуйте снова.",
+        tipClose: "Закрыть",
+        ctas: [
+          "Что почитать? Спроси меня",
+          "Задай вопрос о книге",
+          "Нужна помощь с рефератом?",
+        ],
       };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Периодический call-to-action: первая подсказка через 8с,
+  // держится 6с, повторяется каждые 28с. Останавливается когда чат открыт
+  // или юзер явно закрыл подсказку.
+  useEffect(() => {
+    if (isOpen || tipDismissed) {
+      setTipIndex(null);
+      return;
+    }
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    let cycleTimer: ReturnType<typeof setInterval> | null = null;
+    const show = (i: number) => {
+      setTipIndex(i);
+      hideTimer = setTimeout(() => setTipIndex(null), 6000);
+    };
+    const firstTimer = setTimeout(() => {
+      let i = 0;
+      show(i);
+      cycleTimer = setInterval(() => {
+        i = (i + 1) % labels.ctas.length;
+        show(i);
+      }, 28000);
+    }, 8000);
+    return () => {
+      clearTimeout(firstTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+      if (cycleTimer) clearInterval(cycleTimer);
+    };
+  }, [isOpen, tipDismissed, labels.ctas.length]);
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -170,37 +213,96 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
 
   return (
     <>
-      {/* Toggle button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label={labels.title}
-        aria-expanded={isOpen}
-        className={cn(
-          "fixed bottom-20 lg:bottom-6 right-4 z-50 w-14 h-14 rounded-full shadow-xl overflow-hidden transition-all",
-          "hover:shadow-2xl focus-visible:outline-none focus-visible:ring-4",
-          "ring-[var(--primary)]/30"
-        )}
-        style={{ backgroundColor: "var(--surface)" }}
-      >
-        {isOpen ? (
-          <span
-            className="absolute inset-0 flex items-center justify-center text-white"
-            style={{ backgroundColor: "var(--primary)" }}
+      {/* Всплывающая подсказка-призыв */}
+      {!isOpen && tipIndex !== null && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 lg:bottom-6 right-20 z-50 max-w-[220px] animate-slide-up"
+        >
+          <div
+            className="relative rounded-2xl px-4 py-3 text-sm font-medium shadow-lg"
+            style={{
+              backgroundColor: "var(--surface)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
+            }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </span>
-        ) : (
-          <Image
-            src="/illustrations/ai-helper.jpg"
-            alt=""
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
+            <button
+              type="button"
+              aria-label={labels.tipClose}
+              onClick={() => setTipDismissed(true)}
+              className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+              style={{ backgroundColor: "var(--foreground-muted)", color: "var(--surface)" }}
+            >
+              ×
+            </button>
+            {labels.ctas[tipIndex]}
+            <span
+              aria-hidden
+              className="absolute top-1/2 -right-1.5 w-3 h-3 rotate-45 -translate-y-1/2"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderRight: "1px solid var(--border)",
+                borderTop: "1px solid var(--border)",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Toggle button + пульсирующий halo */}
+      <div className="fixed bottom-20 lg:bottom-6 right-4 z-50 w-14 h-14">
+        {!isOpen && (
+          <>
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full animate-ping"
+              style={{ backgroundColor: "var(--accent)", opacity: 0.35 }}
+            />
+            <span
+              aria-hidden
+              className="absolute -inset-1 rounded-full"
+              style={{
+                background: "radial-gradient(closest-side, rgba(226,94,46,0.35), transparent 70%)",
+                filter: "blur(6px)",
+              }}
+            />
+          </>
         )}
-      </button>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={labels.title}
+          aria-expanded={isOpen}
+          className={cn(
+            "relative w-14 h-14 rounded-full overflow-hidden transition-all",
+            "shadow-[0_10px_30px_-5px_rgba(226,94,46,0.55)]",
+            "hover:shadow-[0_14px_40px_-5px_rgba(226,94,46,0.75)] hover:scale-105",
+            "focus-visible:outline-none focus-visible:ring-4 ring-[var(--accent)]/50",
+            "ring-2 ring-white"
+          )}
+          style={{ backgroundColor: "var(--surface)" }}
+        >
+          {isOpen ? (
+            <span
+              className="absolute inset-0 flex items-center justify-center text-white"
+              style={{ backgroundColor: "var(--primary)" }}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </span>
+          ) : (
+            <Image
+              src="/illustrations/ai-helper.jpg"
+              alt=""
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          )}
+        </button>
+      </div>
 
       {/* Chat window */}
       {isOpen && (
