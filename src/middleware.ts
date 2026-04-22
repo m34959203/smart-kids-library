@@ -26,7 +26,13 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/uploads/") ||
     pathname.includes(".") ||
     pathname === "/manifest.json" ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    pathname === "/icon" ||
+    pathname === "/apple-icon" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sw.js" ||
+    pathname === "/offline.html"
   ) {
     return NextResponse.next();
   }
@@ -46,5 +52,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|uploads|favicon.ico|manifest.json).*)"],
+  matcher: ["/((?!_next|api|uploads|favicon.ico|manifest.json|icon|apple-icon|sitemap.xml|robots.txt|sw.js|offline.html).*)"],
 };
