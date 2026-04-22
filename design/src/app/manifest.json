@@ -1,0 +1,25 @@
+{
+  "name": "Smart Kids Library Satpayev",
+  "short_name": "Smart Kids Library",
+  "description": "Digital ecosystem for children's library in Satpayev, Kazakhstan",
+  "start_url": "/ru",
+  "display": "standalone",
+  "background_color": "#fefce8",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "books"],
+  "lang": "ru",
+  "dir": "ltr"
+}
