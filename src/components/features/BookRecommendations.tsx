@@ -1,56 +1,55 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import BookCard from "./BookCard";
-import { BookCardSkeleton } from "@/components/ui/Skeleton";
+import { getMany } from "@/lib/db";
 
 interface Book {
   id: number;
   title: string;
-  author: string;
-  cover_url?: string;
-  genre?: string;
-  age_category?: string;
+  author: string | null;
+  cover_url: string | null;
+  genre: string | null;
+  age_category: string | null;
+  is_available: boolean;
 }
 
 interface BookRecommendationsProps {
   locale: string;
   ageGroup?: string;
+  limit?: number;
 }
 
-export default function BookRecommendations({ locale, ageGroup }: BookRecommendationsProps) {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (ageGroup) params.set("ageGroup", ageGroup);
-        params.set("locale", locale);
-
-        const response = await fetch(`/api/recommend?${params}`);
-        const data = await response.json();
-        setBooks(data.books ?? []);
-      } catch {
-        setBooks([]);
-      }
-      setLoading(false);
-    };
-    fetchRecommendations();
-  }, [locale, ageGroup]);
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <BookCardSkeleton key={i} />
-        ))}
-      </div>
-    );
+/**
+ * Server component: тянет рекомендации напрямую из БД.
+ * Раньше был "use client" + useEffect/fetch, что приводило к застреванию
+ * на skeleton-плейсхолдере, если JS не успевал отработать (например,
+ * через Cloudflare quick tunnel с битыми WebSockets).
+ */
+export default async function BookRecommendations({
+  locale,
+  ageGroup,
+  limit = 8,
+}: BookRecommendationsProps) {
+  let books: Book[] = [];
+  try {
+    const sql = ageGroup
+      ? `SELECT id, title, author, cover_url, genre, age_category, is_available
+           FROM books WHERE is_available = true AND age_category = $1
+           ORDER BY RANDOM() LIMIT $2`
+      : `SELECT id, title, author, cover_url, genre, age_category, is_available
+           FROM books WHERE is_available = true
+           ORDER BY RANDOM() LIMIT $1`;
+    const params: unknown[] = ageGroup ? [ageGroup, limit] : [limit];
+    books = await getMany<Book>(sql, params);
+  } catch {
+    books = [];
   }
 
-  if (books.length === 0) return null;
+  if (books.length === 0) {
+    return (
+      <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
+        {locale === "kk" ? "Кітаптар әлі жүктелген жоқ" : "Книги пока не загружены"}
+      </p>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -59,10 +58,11 @@ export default function BookRecommendations({ locale, ageGroup }: BookRecommenda
           key={book.id}
           id={book.id}
           title={book.title}
-          author={book.author}
-          coverUrl={book.cover_url}
-          genre={book.genre}
-          ageCategory={book.age_category}
+          author={book.author ?? ""}
+          coverUrl={book.cover_url ?? undefined}
+          genre={book.genre ?? undefined}
+          ageCategory={book.age_category ?? undefined}
+          isAvailable={book.is_available}
           locale={locale}
         />
       ))}
