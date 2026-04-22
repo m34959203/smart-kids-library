@@ -10,23 +10,23 @@ interface BadgeProps {
 }
 
 export default function Badge({ children, variant = "default", size = "sm", className }: BadgeProps) {
-  const variants = {
-    default: "bg-gray-100 text-gray-700",
-    success: "bg-green-100 text-green-700",
-    warning: "bg-yellow-100 text-yellow-700",
-    danger: "bg-red-100 text-red-700",
-    info: "bg-blue-100 text-blue-700",
-    purple: "bg-purple-100 text-purple-700",
-    pink: "bg-pink-100 text-pink-700",
+  const variants: Record<string, string> = {
+    default: "bg-[var(--muted)] text-[var(--foreground-muted)]",
+    success: "bg-[var(--primary-light)] text-[var(--primary-dark)]",
+    warning: "bg-amber-100 text-amber-800",
+    danger:  "bg-red-50 text-[var(--danger)]",
+    info:    "bg-blue-50 text-[var(--info)]",
+    purple:  "bg-[var(--primary-light)] text-[var(--primary-dark)]",
+    pink:    "bg-[var(--accent-light)] text-[var(--accent)]",
   };
 
-  const sizes = {
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-3 py-1 text-sm",
+  const sizes: Record<string, string> = {
+    sm: "px-2.5 py-0.5 text-[10px] tracking-widest uppercase",
+    md: "px-3 py-1 text-xs tracking-wider uppercase",
   };
 
   return (
-    <span className={cn("inline-flex items-center font-medium rounded-full", variants[variant], sizes[size], className)}>
+    <span className={cn("inline-flex items-center font-semibold rounded-full", variants[variant], sizes[size], className)}>
       {children}
     </span>
   );

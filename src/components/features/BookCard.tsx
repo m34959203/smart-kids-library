@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
 interface BookCardProps {
@@ -26,40 +25,81 @@ export default function BookCard({
   locale,
 }: BookCardProps) {
   return (
-    <Link href={`/${locale}/catalog/${id}`}>
-      <Card hoverable className="h-full">
-        <div className="aspect-[3/4] bg-gradient-to-br from-purple-100 to-pink-100 relative overflow-hidden">
+    <Link href={`/${locale}/catalog/${id}`} className="group block">
+      <article
+        className="h-full rounded-2xl overflow-hidden transition-all group-hover:-translate-y-0.5"
+        style={{
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
+        <div
+          className="aspect-[3/4] relative overflow-hidden"
+          style={{ backgroundColor: "var(--muted)" }}
+        >
           {coverUrl ? (
-            <img src={coverUrl} alt={title} className="w-full h-full object-cover" />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={coverUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg className="w-16 h-16 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
+            <div
+              className="w-full h-full flex items-center justify-center relative"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
+                color: "white",
+              }}
+            >
+              <div className="absolute inset-4 border border-white/25 rounded-xl" aria-hidden />
+              <div className="text-center px-4 relative">
+                <div className="text-[10px] tracking-[0.25em] uppercase opacity-70 mb-3">Book</div>
+                <div className="font-display text-lg leading-tight line-clamp-4">{title}</div>
+              </div>
             </div>
           )}
+
           {ageCategory && (
-            <div className="absolute top-2 left-2">
-              <Badge variant="purple" size="sm">{ageCategory}</Badge>
+            <div className="absolute top-3 left-3">
+              <span
+                className="inline-block text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: "rgba(255,255,255,0.92)", color: "var(--primary-dark)" }}
+              >
+                {ageCategory}
+              </span>
             </div>
           )}
           {!isAvailable && (
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ backgroundColor: "rgba(26, 23, 18, 0.5)" }}
+            >
               <Badge variant="danger" size="md">
                 {locale === "kk" ? "Қол жетімсіз" : "Недоступна"}
               </Badge>
             </div>
           )}
         </div>
-        <div className="p-3">
-          <h3 className="font-bold text-sm text-purple-900 line-clamp-2 mb-1">{title}</h3>
-          <p className="text-xs text-gray-500 mb-2">{author}</p>
+
+        <div className="p-4">
+          <h3 className="font-display text-[15px] font-semibold text-foreground line-clamp-2 leading-snug mb-1.5">
+            {title}
+          </h3>
+          <p className="text-xs mb-3" style={{ color: "var(--foreground-muted)" }}>
+            {author}
+          </p>
           {genre && (
-            <Badge variant="info" size="sm">{genre}</Badge>
+            <span
+              className="inline-block text-[10px] tracking-widest uppercase px-2 py-0.5 rounded-full"
+              style={{
+                color: "var(--primary)",
+                backgroundColor: "var(--primary-light)",
+              }}
+            >
+              {genre}
+            </span>
           )}
         </div>
-      </Card>
+      </article>
     </Link>
   );
 }
