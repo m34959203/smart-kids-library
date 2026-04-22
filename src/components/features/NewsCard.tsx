@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils";
 
 interface NewsCardProps {
@@ -17,30 +15,60 @@ interface NewsCardProps {
 
 export default function NewsCard({ slug, title, excerpt, imageUrl, category, publishedAt, locale }: NewsCardProps) {
   return (
-    <Link href={`/${locale}/news/${slug}`}>
-      <Card hoverable className="h-full flex flex-col">
-        <div className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 relative overflow-hidden">
+    <Link href={`/${locale}/news/${slug}`} className="group block h-full">
+      <article
+        className="h-full rounded-[22px] overflow-hidden flex flex-col transition-all group-hover:-translate-y-0.5"
+        style={{
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
+        <div
+          className="aspect-[16/10] relative overflow-hidden"
+          style={{ backgroundColor: "var(--muted)" }}
+        >
           {imageUrl ? (
-            <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-              </svg>
+            <div
+              className="w-full h-full flex items-end p-5"
+              style={{ background: "linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%)" }}
+            >
+              <div className="font-display text-white text-xl leading-tight line-clamp-3 max-w-[80%]">
+                {title}
+              </div>
             </div>
           )}
           {category && (
-            <div className="absolute top-2 left-2">
-              <Badge variant="purple">{category}</Badge>
+            <div className="absolute top-3 left-3">
+              <span
+                className="inline-block text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: "rgba(255,255,255,0.92)", color: "var(--primary-dark)" }}
+              >
+                {category}
+              </span>
             </div>
           )}
         </div>
-        <div className="p-4 flex flex-col flex-1">
-          <h3 className="font-bold text-purple-900 line-clamp-2 mb-2">{title}</h3>
-          <p className="text-sm text-gray-500 line-clamp-3 flex-1">{excerpt}</p>
-          <p className="text-xs text-gray-400 mt-3">{formatDate(publishedAt, locale)}</p>
+
+        <div className="p-5 flex flex-col flex-1">
+          <p className="font-mono text-[11px] tracking-widest mb-3" style={{ color: "var(--foreground-muted)" }}>
+            {formatDate(publishedAt, locale)}
+          </p>
+          <h3 className="font-display text-lg font-semibold leading-snug line-clamp-2 mb-2 text-foreground group-hover:text-[color:var(--primary)] transition-colors">
+            {title}
+          </h3>
+          <p className="text-sm line-clamp-3 flex-1" style={{ color: "var(--foreground-muted)", lineHeight: 1.55 }}>
+            {excerpt}
+          </p>
+          <div className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide" style={{ color: "var(--primary)" }}>
+            {locale === "kk" ? "Оқу" : "Читать"}
+            <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
+          </div>
         </div>
-      </Card>
+      </article>
     </Link>
   );
 }

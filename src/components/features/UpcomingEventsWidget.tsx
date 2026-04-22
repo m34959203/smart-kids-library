@@ -53,13 +53,22 @@ export default async function UpcomingEventsWidget({
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-4 mt-12">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-purple-900">
-          {kk ? "Жақын іс-шаралар" : "Ближайшие события"}
-        </h2>
-        <Link href={`/${locale}/events`} className="text-sm text-purple-500 hover:text-purple-700 font-medium">
-          {kk ? "Барлығы" : "Все события"} →
+    <section className="max-w-7xl mx-auto px-4 mt-16">
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <div className="section-eyebrow mb-2">
+            {kk ? "Күнтізбе" : "Афиша"}
+          </div>
+          <h2 className="font-display text-2xl md:text-3xl font-semibold">
+            {kk ? "Жақын іс-шаралар" : "Ближайшие события"}
+          </h2>
+        </div>
+        <Link
+          href={`/${locale}/events`}
+          className="hidden sm:inline-flex items-center gap-2 text-sm font-medium hover:gap-3 transition-all"
+          style={{ color: "var(--primary)" }}
+        >
+          {kk ? "Барлығы" : "Все события"} <span aria-hidden>→</span>
         </Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -83,7 +92,14 @@ export default async function UpcomingEventsWidget({
               href={`/${locale}/events/${ev.id}`}
               className="group"
             >
-              <article className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-purple-50 p-4 h-full">
+              <article
+                className="rounded-2xl p-5 h-full transition-all hover:-translate-y-0.5"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <span
                     className={`inline-block px-2 py-0.5 text-[10px] font-bold text-white rounded-full ${getEventTypeColor(ev.event_type)}`}
@@ -102,13 +118,16 @@ export default async function UpcomingEventsWidget({
                     </span>
                   )}
                 </div>
-                <h3 className="font-bold text-purple-900 text-sm line-clamp-2 group-hover:text-purple-700">{title}</h3>
-                <p className="text-xs text-gray-500 mt-2">
+                <h3 className="font-display text-base font-semibold line-clamp-2 text-foreground group-hover:text-[color:var(--primary)] transition-colors">{title}</h3>
+                <p className="text-xs mt-3" style={{ color: "var(--foreground-muted)" }}>
                   {dayFmt} · {timeFmt}
                   {ev.location ? ` · ${ev.location}` : ""}
                 </p>
                 {ev.age_group && ev.age_group !== "all" && (
-                  <span className="inline-block mt-2 text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">
+                  <span
+                    className="inline-block mt-3 text-[10px] tracking-widest uppercase font-semibold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "var(--primary-light)", color: "var(--primary-dark)" }}
+                  >
                     {ev.age_group}
                   </span>
                 )}

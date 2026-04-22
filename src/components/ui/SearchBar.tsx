@@ -37,12 +37,19 @@ export default function SearchBar({ placeholder = "Search...", onSearch, suggest
 
   return (
     <form onSubmit={handleSubmit} className={cn("relative w-full", className)}>
-      <div className="relative">
+      <div
+        className="relative flex items-center rounded-full transition-all"
+        style={{
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400"
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          className="absolute left-5 w-5 h-5"
+          style={{ color: "var(--foreground-muted)" }}
+          fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          <path strokeLinecap="round" strokeLinejoin="round"
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -52,36 +59,44 @@ export default function SearchBar({ placeholder = "Search...", onSearch, suggest
           onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
           onFocus={() => setShowSuggestions(true)}
           placeholder={placeholder}
-          className="w-full pl-12 pr-12 py-3 rounded-2xl border-2 border-purple-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all outline-none text-lg"
+          className="w-full pl-14 pr-32 py-4 rounded-full bg-transparent text-foreground placeholder:text-[var(--foreground-muted)] placeholder:opacity-70 outline-none text-base"
         />
         {query && (
           <button
             type="button"
             onClick={() => { setQuery(""); onSearch(""); }}
-            className="absolute right-14 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full"
+            className="absolute right-[100px] p-1 rounded-full hover:bg-[var(--muted)] transition-colors"
+            aria-label="Clear"
           >
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg className="w-4 h-4" style={{ color: "var(--foreground-muted)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         )}
         <button
           type="submit"
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
+          className="absolute right-2 px-5 py-2.5 rounded-full font-semibold text-sm text-white transition-colors hover:bg-[var(--primary-dark)]"
+          style={{ backgroundColor: "var(--primary)" }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-          </svg>
+          {placeholder?.includes("айы") || placeholder?.includes("Іздеу") ? "Іздеу" : "Искать"}
         </button>
       </div>
 
       {showSuggestions && query && filtered.length > 0 && (
-        <div className="absolute z-20 w-full mt-1 bg-white rounded-xl shadow-lg border border-purple-100 max-h-60 overflow-auto">
+        <div
+          className="absolute z-20 w-full mt-2 rounded-2xl overflow-hidden"
+          style={{
+            backgroundColor: "var(--surface)",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-lg)",
+          }}
+        >
           {filtered.slice(0, 8).map((suggestion, i) => (
             <button
               key={i}
               type="button"
-              className="w-full px-4 py-2 text-left hover:bg-purple-50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+              className="w-full px-5 py-3 text-left text-sm hover:bg-[var(--muted)] transition-colors border-b last:border-b-0"
+              style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
               onClick={() => { setQuery(suggestion); onSearch(suggestion); setShowSuggestions(false); }}
             >
               {suggestion}

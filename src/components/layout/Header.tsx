@@ -28,63 +28,85 @@ export default function Header({ locale, messages }: HeaderProps) {
   ];
 
   return (
-    <header className="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-purple-100">
+    <header
+      className="sticky top-0 z-40 backdrop-blur-md"
+      style={{
+        backgroundColor: "rgba(250, 245, 234, 0.82)",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl transition-shadow">
-              <BookIcon className="w-6 h-6" />
+          {/* Логотип — editorial wordmark */}
+          <Link href={`/${locale}`} className="flex items-center gap-3 group">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-all"
+              style={{ backgroundColor: "var(--primary)" }}
+            >
+              <BookIcon className="w-5 h-5" />
             </div>
-            <div className="hidden sm:block">
-              <div className="font-bold text-purple-900 text-sm leading-tight">Smart Kids</div>
-              <div className="text-xs text-purple-500 leading-tight">Library Satpayev</div>
+            <div className="hidden sm:flex flex-col leading-none">
+              <span className="font-display font-semibold text-[15px] tracking-tight text-foreground">
+                Smart Kids Library
+              </span>
+              <span className="text-[11px] tracking-[0.18em] uppercase mt-0.5" style={{ color: "var(--foreground-muted)" }}>
+                Satpayev · с 1970
+              </span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
+          <nav className="hidden lg:flex items-center gap-0.5" aria-label="Main">
             <AgeMenu locale={locale} fallback={navLinks} />
           </nav>
 
-          {/* Global search (desktop) */}
+          {/* Глобальный поиск (desktop) */}
           <div className="hidden md:block flex-1 max-w-md mx-4">
             <GlobalSearch locale={locale} />
           </div>
 
-          {/* Right side */}
+          {/* Правая часть */}
           <div className="flex items-center gap-2">
             <AgeProfileSwitcher locale={locale} />
 
-            {/* Language switcher */}
+            {/* Переключатель языка */}
             <Link
               href={`/${altLocale}`}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-widest uppercase border transition-colors"
+              style={{
+                color: "var(--foreground)",
+                borderColor: "var(--border)",
+                backgroundColor: "transparent",
+              }}
             >
               {altLocale === "kk" ? "KZ" : "RU"}
             </Link>
 
-            {/* Profile */}
+            {/* Профиль */}
             <Link
               href={`/${locale}/profile`}
-              className="p-2 rounded-xl hover:bg-purple-50 transition-colors text-gray-600"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: "var(--foreground-muted)" }}
+              aria-label="Profile"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </Link>
 
-            {/* Mobile menu toggle */}
+            {/* Мобильное меню */}
             <button
-              className="lg:hidden p-2 rounded-xl hover:bg-purple-50 transition-colors"
+              className="lg:hidden p-2 rounded-lg transition-colors"
+              style={{ color: "var(--foreground)" }}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h16M4 12h16M4 17h16" />
                 )}
               </svg>
             </button>
@@ -92,9 +114,15 @@ export default function Header({ locale, messages }: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Мобильное меню */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-purple-100 animate-slide-up">
+        <div
+          className="lg:hidden animate-slide-up"
+          style={{
+            backgroundColor: "var(--surface)",
+            borderTop: "1px solid var(--border)",
+          }}
+        >
           <nav className="max-w-7xl mx-auto px-4 py-4 space-y-3" aria-label="Mobile">
             <div className="md:hidden">
               <GlobalSearch locale={locale} />
@@ -102,7 +130,8 @@ export default function Header({ locale, messages }: HeaderProps) {
             <AgeMenu locale={locale} fallback={navLinks} variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
             <Link
               href={`/${locale}/services`}
-              className="block px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
+              className="block px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-muted transition-all"
+              style={{ color: "var(--foreground-muted)" }}
               onClick={() => setMobileMenuOpen(false)}
             >
               {nav.services ?? "Services"}

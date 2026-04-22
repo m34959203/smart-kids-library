@@ -42,18 +42,18 @@ export default function Breadcrumbs() {
   const homeLabel = kk ? "Басты" : "Главная";
 
   return (
-    <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-4 pt-3">
-      <ol className="flex flex-wrap items-center gap-1 text-xs text-gray-500">
+    <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-4 pt-4">
+      <ol className="flex flex-wrap items-center gap-1.5 text-[11px] tracking-widest uppercase font-mono" style={{ color: "var(--foreground-muted)" }}>
         <li>
-          <Link href={`/${locale}`} className="hover:text-purple-700">{homeLabel}</Link>
+          <Link href={`/${locale}`} className="hover:text-[color:var(--primary)] transition-colors">{homeLabel}</Link>
         </li>
         {crumbs.map((c) => (
-          <li key={c.href} className="flex items-center gap-1">
-            <span aria-hidden="true">›</span>
+          <li key={c.href} className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="opacity-50">/</span>
             {c.isLast ? (
-              <span className="text-purple-700 font-medium truncate max-w-[180px]" aria-current="page">{c.label}</span>
+              <span className="font-semibold truncate max-w-[200px]" style={{ color: "var(--primary)" }} aria-current="page">{c.label}</span>
             ) : (
-              <Link href={c.href} className="hover:text-purple-700 truncate max-w-[140px]">{c.label}</Link>
+              <Link href={c.href} className="hover:text-[color:var(--primary)] transition-colors truncate max-w-[160px]">{c.label}</Link>
             )}
           </li>
         ))}

@@ -13,30 +13,22 @@ interface AgeProfileSwitcherProps {
 const profiles: Array<{
   group: AgeGroup;
   icon: React.ReactNode;
-  color: string;
-  bgColor: string;
   labels: Record<string, string>;
 }> = [
   {
     group: "6-9",
-    icon: <KidsIcon className="w-5 h-5" />,
-    color: "text-orange-500",
-    bgColor: "bg-orange-100 hover:bg-orange-200 border-orange-300",
-    labels: { ru: "6-9 лет", kk: "6-9 жас" },
+    icon: <KidsIcon className="w-4 h-4" />,
+    labels: { ru: "6–9", kk: "6–9" },
   },
   {
     group: "10-13",
-    icon: <TeensIcon className="w-5 h-5" />,
-    color: "text-blue-500",
-    bgColor: "bg-blue-100 hover:bg-blue-200 border-blue-300",
-    labels: { ru: "10-13 лет", kk: "10-13 жас" },
+    icon: <TeensIcon className="w-4 h-4" />,
+    labels: { ru: "10–13", kk: "10–13" },
   },
   {
     group: "14-17",
-    icon: <YouthIcon className="w-5 h-5" />,
-    color: "text-purple-500",
-    bgColor: "bg-purple-100 hover:bg-purple-200 border-purple-300",
-    labels: { ru: "14-17 лет", kk: "14-17 жас" },
+    icon: <YouthIcon className="w-4 h-4" />,
+    labels: { ru: "14–17", kk: "14–17" },
   },
 ];
 
@@ -50,23 +42,35 @@ export default function AgeProfileSwitcher({ locale, onChange }: AgeProfileSwitc
   };
 
   return (
-    <div className="flex gap-1">
-      {profiles.map((p) => (
-        <button
-          key={p.group}
-          onClick={() => handleSelect(p.group)}
-          className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium transition-all border",
-            active === p.group
-              ? `${p.bgColor} ${p.color} border-2 shadow-sm`
-              : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"
-          )}
-          title={p.labels[locale] ?? p.labels.ru}
-        >
-          {p.icon}
-          <span className="hidden sm:inline">{p.labels[locale] ?? p.labels.ru}</span>
-        </button>
-      ))}
+    <div
+      className="hidden md:inline-flex items-center gap-0.5 p-0.5 rounded-full"
+      style={{
+        backgroundColor: "var(--muted)",
+        border: "1px solid var(--border)",
+      }}
+    >
+      {profiles.map((p) => {
+        const isActive = active === p.group;
+        return (
+          <button
+            key={p.group}
+            onClick={() => handleSelect(p.group)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wider transition-all"
+            )}
+            style={{
+              backgroundColor: isActive ? "var(--surface)" : "transparent",
+              color: isActive ? "var(--primary)" : "var(--foreground-muted)",
+              boxShadow: isActive ? "var(--shadow-sm)" : undefined,
+            }}
+            title={p.labels[locale] ?? p.labels.ru}
+            aria-pressed={isActive}
+          >
+            {p.icon}
+            <span>{p.labels[locale] ?? p.labels.ru}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -16,13 +16,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={inputId} className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: "var(--foreground-muted)" }}>
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none" style={{ color: "var(--foreground-muted)" }}>
               {icon}
             </div>
           )}
@@ -30,17 +30,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              "w-full rounded-xl border-2 border-purple-200 bg-white px-4 py-2.5 text-gray-900",
-              "placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-200",
+              "w-full rounded-xl bg-[var(--surface)] px-4 py-2.5 text-foreground",
+              "placeholder:text-[var(--foreground-muted)] placeholder:opacity-60",
+              "border border-[var(--border)]",
+              "focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-light)]",
               "transition-all duration-200 outline-none",
               icon ? "pl-10" : undefined,
-              error ? "border-red-400 focus:border-red-500 focus:ring-red-200" : undefined,
+              error ? "border-[var(--danger)] focus:border-[var(--danger)] focus:ring-red-100" : undefined,
               className
             )}
             {...props}
           />
         </div>
-        {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+        {error && <p className="mt-1.5 text-xs" style={{ color: "var(--danger)" }}>{error}</p>}
       </div>
     );
   }

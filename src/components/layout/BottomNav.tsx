@@ -16,8 +16,8 @@ export default function BottomNav({ locale }: BottomNavProps) {
       href: `/${locale}`,
       label: locale === "kk" ? "Басты" : "Главная",
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10" />
         </svg>
       ),
     },
@@ -25,8 +25,8 @@ export default function BottomNav({ locale }: BottomNavProps) {
       href: `/${locale}/catalog`,
       label: locale === "kk" ? "Каталог" : "Каталог",
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h4v14H4zM10 5h4v14h-4zM16 8l3-1 2 14-3 1z" />
         </svg>
       ),
     },
@@ -34,8 +34,10 @@ export default function BottomNav({ locale }: BottomNavProps) {
       href: `/${locale}/kids`,
       label: locale === "kk" ? "Балалар" : "Детям",
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <circle cx="12" cy="9" r="3" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 20v-1a4 4 0 014-4h4a4 4 0 014 4v1" />
+          <path strokeLinecap="round" d="M9 4l-1-1M15 4l1-1" />
         </svg>
       ),
     },
@@ -43,8 +45,8 @@ export default function BottomNav({ locale }: BottomNavProps) {
       href: `/${locale}/events`,
       label: locale === "kk" ? "Оқиғалар" : "События",
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v3m8-3v3M4 8h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" />
         </svg>
       ),
     },
@@ -52,15 +54,24 @@ export default function BottomNav({ locale }: BottomNavProps) {
       href: `/${locale}/profile`,
       label: locale === "kk" ? "Профиль" : "Профиль",
       icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <circle cx="12" cy="8" r="4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 21a7 7 0 0114 0" />
         </svg>
       ),
     },
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-purple-100 z-40 safe-bottom">
+    <nav
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-bottom"
+      style={{
+        backgroundColor: "rgba(250, 245, 234, 0.9)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderTop: "1px solid var(--border)",
+      }}
+    >
       <div className="flex justify-around items-center h-16">
         {items.map((item) => {
           const isActive = pathname === item.href || (item.href !== `/${locale}` && pathname.startsWith(item.href));
@@ -69,12 +80,20 @@ export default function BottomNav({ locale }: BottomNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
-                isActive ? "text-purple-600" : "text-gray-400 hover:text-purple-400"
+                "relative flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
               )}
+              style={{
+                color: isActive ? "var(--primary)" : "var(--foreground-muted)",
+              }}
             >
+              {isActive && (
+                <span
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-b"
+                  style={{ backgroundColor: "var(--primary)" }}
+                />
+              )}
               {item.icon}
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
             </Link>
           );
         })}

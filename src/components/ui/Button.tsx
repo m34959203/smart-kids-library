@@ -11,20 +11,26 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", loading, children, disabled, ...props }, ref) => {
-    const base = "inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    const base =
+      "inline-flex items-center justify-center font-semibold rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
-    const variants = {
-      primary: "bg-purple-500 text-white hover:bg-purple-600 focus:ring-purple-400 shadow-lg hover:shadow-xl",
-      secondary: "bg-pink-400 text-white hover:bg-pink-500 focus:ring-pink-300 shadow-lg hover:shadow-xl",
-      outline: "border-2 border-purple-500 text-purple-600 hover:bg-purple-50 focus:ring-purple-400",
-      ghost: "text-purple-600 hover:bg-purple-50 focus:ring-purple-400",
-      danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400",
+    const variants: Record<string, string> = {
+      primary:
+        "bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] focus-visible:ring-[var(--primary)] shadow-sm hover:shadow-md",
+      secondary:
+        "bg-[var(--accent)] text-white hover:brightness-95 focus-visible:ring-[var(--accent)] shadow-sm hover:shadow-md",
+      outline:
+        "border border-[var(--border)] bg-transparent text-foreground hover:bg-[var(--muted)] focus-visible:ring-[var(--primary)]",
+      ghost:
+        "text-foreground hover:bg-[var(--muted)] focus-visible:ring-[var(--primary)]",
+      danger:
+        "bg-[var(--danger)] text-white hover:brightness-95 focus-visible:ring-[var(--danger)]",
     };
 
-    const sizes = {
-      sm: "px-3 py-1.5 text-sm",
-      md: "px-5 py-2.5 text-base",
-      lg: "px-8 py-3.5 text-lg",
+    const sizes: Record<string, string> = {
+      sm: "px-4 py-2 text-sm",
+      md: "px-5 py-2.5 text-sm",
+      lg: "px-7 py-3.5 text-base",
     };
 
     return (
