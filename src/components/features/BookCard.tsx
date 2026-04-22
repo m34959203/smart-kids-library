@@ -14,6 +14,31 @@ interface BookCardProps {
   locale: string;
 }
 
+const FALLBACK_COVERS = [
+  "/covers/cover-01.jpg",
+  "/covers/cover-02.jpg",
+  "/covers/cover-03.jpg",
+  "/covers/cover-04.jpg",
+  "/covers/cover-05.jpg",
+  "/covers/cover-06.jpg",
+  "/covers/cover-07.jpg",
+  "/covers/cover-08.jpg",
+];
+
+/**
+ * Детерминированный выбор fallback-обложки на основе id и названия.
+ * Одна и та же книга всегда будет получать одну и ту же обложку.
+ */
+function pickFallbackCover(id: number, title: string): string {
+  const seed = `${id}-${title}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  const index = Math.abs(hash) % FALLBACK_COVERS.length;
+  return FALLBACK_COVERS[index];
+}
+
 export default function BookCard({
   id,
   title,
@@ -24,6 +49,9 @@ export default function BookCard({
   isAvailable = true,
   locale,
 }: BookCardProps) {
+  const hasRealCover = Boolean(coverUrl && coverUrl.trim());
+  const finalCover = hasRealCover ? coverUrl! : pickFallbackCover(id, title);
+
   return (
     <Link href={`/${locale}/catalog/${id}`} className="group block">
       <article
@@ -38,40 +66,54 @@ export default function BookCard({
           className="aspect-[3/4] relative overflow-hidden"
           style={{ backgroundColor: "var(--muted)" }}
         >
-          {coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center relative"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
-                color: "white",
-              }}
-            >
-              <div className="absolute inset-4 border border-white/25 rounded-xl" aria-hidden />
-              <div className="text-center px-4 relative">
-                <div className="text-[10px] tracking-[0.25em] uppercase opacity-70 mb-3">Book</div>
-                <div className="font-display text-lg leading-tight line-clamp-4">{title}</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={finalCover}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            loading="lazy"
+          />
+
+          {/* Для fallback-обложек — накладываем название сверху, чтобы обложка была «персонализированной» */}
+          {!hasRealCover && (
+            <>
+              <div
+                className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(26,23,18,0.55) 0%, rgba(26,23,18,0) 100%)",
+                }}
+                aria-hidden
+              />
+              <div className="absolute inset-x-0 top-0 p-4">
+                <div className="text-[9px] tracking-[0.3em] uppercase font-mono text-white/75 mb-1.5">
+                  Smart Kids Library
+                </div>
+                <h3 className="font-display text-[15px] font-semibold leading-tight text-white line-clamp-3 text-balance">
+                  {title}
+                </h3>
               </div>
-            </div>
+            </>
           )}
 
           {ageCategory && (
-            <div className="absolute top-3 left-3">
+            <div className="absolute top-3 right-3">
               <span
-                className="inline-block text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: "rgba(255,255,255,0.92)", color: "var(--primary-dark)" }}
+                className="inline-block text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full backdrop-blur-sm"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.92)",
+                  color: "var(--primary-dark)",
+                }}
               >
                 {ageCategory}
               </span>
             </div>
           )}
+
           {!isAvailable && (
             <div
               className="absolute inset-0 flex items-center justify-center"
-              style={{ backgroundColor: "rgba(26, 23, 18, 0.5)" }}
+              style={{ backgroundColor: "rgba(26, 23, 18, 0.55)" }}
             >
               <Badge variant="danger" size="md">
                 {locale === "kk" ? "Қол жетімсіз" : "Недоступна"}
