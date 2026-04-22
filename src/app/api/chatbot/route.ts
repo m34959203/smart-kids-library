@@ -35,9 +35,19 @@ const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
 };
 
 const BLOCKED_PATTERNS = [
-  /(?:секс|порно|18\+|nude|nsfw)/i,
-  /(?:суицид|самоубий|убей себя|kill yourself)/i,
-  /(?:наркот|drugs|cocaine|марихуан)/i,
+  // 18+ / NSFW
+  /(?:секс|порно|18\+|nude|nsfw|эрот)/i,
+  // Self-harm
+  /(?:суицид|самоубий|убей\s+себя|kill\s+yourself|self[-\s]?harm)/i,
+  // Drugs
+  /(?:наркот|drugs|cocaine|марихуан|героин|amphetamin)/i,
+  // Weapons / explosives
+  /(?:взрывчат|бомб[уы]|explosive|how\s+to\s+make\s+(?:bomb|weapon|gun)|изготови[ьть]+\s+оруж)/i,
+  // Jailbreak / prompt-injection
+  /(?:ignore\s+(?:all\s+)?previous\s+(?:instructions|prompts)|disregard\s+(?:above|previous)|jailbreak|DAN\s+mode|роль\s+(?:разработчика|admin)|pretend\s+(?:to\s+be|you\s+are))/i,
+  /(?:забудь\s+(?:все\s+)?(?:предыдущ|инструкци|правил)|игнорируй\s+(?:инструкци|правил|систем))/i,
+  // Hate / extremism
+  /(?:терроризм|nazi|нацист|hate\s+speech|расизм)/i,
 ];
 
 const schema = v.object({

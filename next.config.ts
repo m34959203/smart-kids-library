@@ -28,6 +28,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  // Cloudflare quick tunnel-домены пропускаем для HMR в dev
+  allowedDevOrigins: [
+    "*.trycloudflare.com",
+  ],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
