@@ -1,5 +1,6 @@
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Link from "next/link";
+import Image from "next/image";
 import ContextualHints from "@/components/features/ContextualHints";
 
 export default async function KidsPage({
@@ -20,12 +21,8 @@ export default async function KidsPage({
       tag: "01",
       accent: "var(--primary)",
       bg: "#d9ebe4",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-full h-full">
-          <path d="M4 5a2 2 0 012-2h10v16H6a2 2 0 00-2 2V5z" />
-          <path d="M8 7h6M8 11h6" strokeLinecap="round" />
-        </svg>
-      ),
+      image: "/illustrations/stories.jpg",
+      alt: kk ? "Ертегілер — ашық кітап және құлпытас" : "Иллюстрация: сказочная открытая книга",
     },
     {
       href: `/${validLocale}/kids/quizzes`,
@@ -34,12 +31,8 @@ export default async function KidsPage({
       tag: "02",
       accent: "var(--accent)",
       bg: "#fce3d1",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-full h-full">
-          <circle cx="12" cy="12" r="9" />
-          <path strokeLinecap="round" d="M9.5 9.5a2.5 2.5 0 115 0c0 1.5-2.5 2-2.5 3.5M12 17h.01" />
-        </svg>
-      ),
+      image: "/illustrations/quizzes.jpg",
+      alt: kk ? "Викторина — сұрақ белгісі мен лампочка" : "Иллюстрация: викторины и идеи",
     },
     {
       href: `/${validLocale}/kids/workshop`,
@@ -48,11 +41,8 @@ export default async function KidsPage({
       tag: "03",
       accent: "#1c3a31",
       bg: "#e4d9c2",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-full h-full">
-          <path d="M15.2 5.6l3.2 3.2M4 20l3.8-.8L19.5 7.5a2 2 0 000-2.8l-.4-.4a2 2 0 00-2.8 0L4.8 16.2 4 20z" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
+      image: "/illustrations/workshop.jpg",
+      alt: kk ? "Шеберхана — қалам және қайшы" : "Иллюстрация: мастерская творчества",
     },
     {
       href: `/${validLocale}/kids/coloring`,
@@ -61,41 +51,79 @@ export default async function KidsPage({
       tag: "04",
       accent: "var(--primary-dark)",
       bg: "#f3ecdb",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="w-full h-full">
-          <path d="M12 3a9 9 0 000 18 3 3 0 003-3 1.5 1.5 0 011.5-1.5H18A3 3 0 0021 13.5 9 9 0 0012 3z" />
-          <circle cx="7.5" cy="10.5" r="1" />
-          <circle cx="10.5" cy="7.5" r="1" />
-          <circle cx="14.5" cy="7.5" r="1" />
-          <circle cx="17" cy="10.5" r="1" />
-        </svg>
-      ),
+      image: "/illustrations/coloring.jpg",
+      alt: kk ? "Бояулар — қарындаштар және гүлдер" : "Иллюстрация: раскраски и карандаши",
     },
   ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 md:py-14">
-      {/* Заголовок */}
-      <header className="mb-12 md:mb-16">
-        <div className="section-eyebrow mb-4 flex items-center gap-3">
-          <span className="inline-block w-8 h-px bg-current" aria-hidden />
-          {kk ? "Балаларға арналған" : "Для читателей"}
+      {/* =========================================================
+          Hero — детская иллюстрация + заголовок
+          ========================================================= */}
+      <header className="mb-14 md:mb-20 grid md:grid-cols-12 gap-8 md:gap-10 items-center">
+        <div className="md:col-span-7 order-2 md:order-1">
+          <div className="section-eyebrow mb-4 flex items-center gap-3">
+            <span className="inline-block w-8 h-px bg-current" aria-hidden />
+            {kk ? "Балаларға арналған" : "Для читателей"}
+          </div>
+          <h1 className="display-hero text-[40px] md:text-[64px] leading-[1.02] text-foreground">
+            {t(messages, "kids.title")}
+            <br />
+            <em className="not-italic font-display" style={{ color: "var(--primary)" }}>
+              {kk ? "ойна, оқы, жаса." : "играй, читай, создавай."}
+            </em>
+          </h1>
+          <p className="mt-5 max-w-xl text-base md:text-lg" style={{ color: "var(--foreground-muted)" }}>
+            {kk
+              ? "Кітаптар, ертегілер, викториналар мен шығармашылыққа арналған бөлім. Барлығы — балалар үшін."
+              : "Интерактивные сказки, викторины, мастерская и раскраски — всё в одном месте, специально для детей."}
+          </p>
         </div>
-        <h1 className="display-hero text-[44px] md:text-[68px] leading-[1.02] text-foreground max-w-3xl">
-          {t(messages, "kids.title")}
-          <br />
-          <em className="not-italic font-display" style={{ color: "var(--primary)" }}>
-            {kk ? "ойна, оқы, жаса." : "играй, читай, создавай."}
-          </em>
-        </h1>
-        <p className="mt-6 max-w-xl text-lg" style={{ color: "var(--foreground-muted)" }}>
-          {kk
-            ? "Кітаптар, ертегілер, викториналар мен шығармашылыққа арналған бөлім. Барлығы — балалар үшін."
-            : "Интерактивные сказки, викторины, мастерская и раскраски — всё в одном месте, специально для детей."}
-        </p>
+
+        <div className="md:col-span-5 order-1 md:order-2">
+          <div className="relative w-full aspect-square max-w-sm mx-auto">
+            <div
+              className="absolute inset-2 rounded-[28px] rotate-[3deg]"
+              style={{ backgroundColor: "#fce3d1", border: "1px solid var(--border)" }}
+              aria-hidden
+            />
+            <div
+              className="absolute inset-0 rounded-[28px] overflow-hidden -rotate-[2deg]"
+              style={{
+                border: "1px solid var(--border)",
+                boxShadow: "var(--shadow-lg)",
+              }}
+            >
+              <Image
+                src="/illustrations/kids-hero.jpg"
+                alt={kk ? "Балалардың кітапханаға саяхаты" : "Дети в путешествии по библиотеке"}
+                fill
+                sizes="(max-width: 768px) 80vw, 400px"
+                className="object-cover"
+                priority
+              />
+            </div>
+            <div
+              className="absolute -bottom-3 -right-3 w-20 h-20 rounded-full flex items-center justify-center text-center rotate-[-8deg] animate-float"
+              style={{
+                backgroundColor: "var(--accent)",
+                color: "white",
+                boxShadow: "var(--shadow-lg)",
+              }}
+            >
+              <div className="leading-tight">
+                <div className="font-display text-xl font-semibold">6+</div>
+                <div className="text-[9px] tracking-widest uppercase">{kk ? "жас" : "лет"}</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* Секции — «журнальная сетка» */}
+      {/* =========================================================
+          Секции — «журнальная сетка» с иллюстрациями
+          ========================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {sections.map((s) => (
           <Link key={s.href} href={s.href} className="group">
@@ -107,20 +135,30 @@ export default async function KidsPage({
                 boxShadow: "var(--shadow-sm)",
               }}
             >
-              <div className="flex items-start justify-between p-6 md:p-8">
+              {/* Иллюстрация */}
+              <div className="relative w-full aspect-[16/10] overflow-hidden">
+                <Image
+                  src={s.image}
+                  alt={s.alt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                />
                 <span
-                  className="font-mono text-xs tracking-widest"
-                  style={{ color: s.accent, opacity: 0.7 }}
+                  className="absolute top-4 left-4 font-mono text-[10px] tracking-widest px-2 py-1 rounded-full font-semibold"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.85)",
+                    color: s.accent,
+                    backdropFilter: "blur(4px)",
+                  }}
                 >
                   N°{s.tag}
                 </span>
-                <div className="w-14 h-14 md:w-16 md:h-16" style={{ color: s.accent }}>
-                  {s.icon}
-                </div>
               </div>
 
-              <div className="px-6 md:px-8 pb-8 md:pb-10">
-                <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-3 leading-tight">
+              {/* Текст */}
+              <div className="px-6 md:px-8 py-7 md:py-8">
+                <h2 className="font-display text-2xl md:text-3xl font-semibold text-foreground mb-3 leading-tight">
                   {s.title}
                 </h2>
                 <p className="text-[15px]" style={{ color: "var(--foreground-muted)", lineHeight: 1.6 }}>

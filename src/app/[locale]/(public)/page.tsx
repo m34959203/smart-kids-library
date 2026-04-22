@@ -1,6 +1,7 @@
 import { getMessages, isValidLocale, type Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import Link from "next/link";
+import Image from "next/image";
 import BookRecommendations from "@/components/features/BookRecommendations";
 import ContextualHints from "@/components/features/ContextualHints";
 import UpcomingEventsWidget from "@/components/features/UpcomingEventsWidget";
@@ -136,9 +137,9 @@ export default async function HomePage({
               </dl>
             </div>
 
-            {/* Правая колонка — «карточка книги» */}
+            {/* Правая колонка — иллюстрация + «печать» */}
             <div className="md:col-span-5 relative hidden md:block">
-              <HeroBookArt kk={kk} />
+              <HeroIllustration kk={kk} />
             </div>
           </div>
         </div>
@@ -306,7 +307,7 @@ export default async function HomePage({
           ========================================================= */}
       <section className="max-w-7xl mx-auto px-4 mt-16 mb-20">
         <div
-          className="rounded-[28px] p-10 md:p-16 relative overflow-hidden"
+          className="rounded-[28px] p-8 md:p-14 relative overflow-hidden"
           style={{ backgroundColor: "var(--primary-dark)" }}
         >
           <div className="absolute inset-0 opacity-[0.06]" aria-hidden>
@@ -314,28 +315,56 @@ export default async function HomePage({
             <div className="absolute -bottom-20 left-10 w-64 h-64 rounded-full" style={{ backgroundColor: "var(--accent)", filter: "blur(80px)" }} />
           </div>
 
-          <div className="relative max-w-2xl">
-            <div className="section-eyebrow mb-5 text-white/70">
-              {kk ? "ИИ-көмекші" : "ИИ-помощник"}
+          <div className="relative grid md:grid-cols-[1fr_auto] gap-10 md:gap-8 items-center">
+            <div className="max-w-2xl">
+              <div className="section-eyebrow mb-5 text-white/70">
+                {kk ? "ИИ-көмекші" : "ИИ-помощник"}
+              </div>
+              <h2 className="font-display text-3xl md:text-5xl font-semibold text-white leading-[1.1]">
+                {kk
+                  ? "Кітапхан — сіздің цифрлық кітапханашыңыз."
+                  : "Кітапхан — ваш цифровой библиотекарь."}
+              </h2>
+              <p className="mt-5 text-white/75 text-lg max-w-xl">
+                {kk
+                  ? "Кітапты табу, сабаққа дайындалу немесе ертегі ойлап табу — тек сұрақ қойыңыз."
+                  : "Найти книгу, подготовиться к уроку или придумать сказку — просто задайте вопрос."}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <span
+                  className="inline-flex items-center gap-2 text-sm text-white/80 px-4 py-2 rounded-full"
+                  style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)" }}
+                >
+                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--accent)" }} />
+                  {kk ? "Төменгі оң жақтағы батырма" : "Кнопка в правом нижнем углу"}
+                </span>
+              </div>
             </div>
-            <h2 className="font-display text-3xl md:text-5xl font-semibold text-white leading-[1.1]">
-              {kk
-                ? "Кітапхан — сіздің цифрлық кітапханашыңыз."
-                : "Кітапхан — ваш цифровой библиотекарь."}
-            </h2>
-            <p className="mt-5 text-white/75 text-lg max-w-xl">
-              {kk
-                ? "Кітапты табу, сабаққа дайындалу немесе ертегі ойлап табу — тек сұрақ қойыңыз."
-                : "Найти книгу, подготовиться к уроку или придумать сказку — просто задайте вопрос."}
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <span
-                className="inline-flex items-center gap-2 text-sm text-white/80 px-4 py-2 rounded-full"
-                style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)" }}
+
+            {/* Иллюстрация совы-библиотекаря */}
+            <div className="hidden md:block relative w-64 h-64 shrink-0">
+              <div
+                className="absolute inset-0 rounded-full overflow-hidden ring-4"
+                style={{
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+                  // @ts-expect-error custom property
+                  "--tw-ring-color": "rgba(255,255,255,0.14)",
+                }}
               >
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--accent)" }} />
-                {kk ? "Төменгі оң жақтағы батырма" : "Кнопка в правом нижнем углу"}
-              </span>
+                <Image
+                  src="/illustrations/ai-helper.jpg"
+                  alt={kk ? "ИИ-көмекші үкі" : "ИИ-помощник в виде совы"}
+                  fill
+                  sizes="256px"
+                  className="object-cover"
+                />
+              </div>
+              <div
+                className="absolute -top-3 -right-3 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase rotate-[8deg]"
+                style={{ backgroundColor: "var(--accent)", color: "white" }}
+              >
+                AI
+              </div>
             </div>
           </div>
         </div>
@@ -347,47 +376,35 @@ export default async function HomePage({
 }
 
 /* =========================================================
-   HERO ART — стилизованная обложка книги
+   HERO ILLUSTRATION — детская иллюстрация + декор
    ========================================================= */
-function HeroBookArt({ kk }: { kk: boolean }) {
+function HeroIllustration({ kk }: { kk: boolean }) {
   return (
-    <div className="relative w-full aspect-[4/5] max-w-md mx-auto">
-      {/* задняя обложка */}
+    <div className="relative w-full aspect-square max-w-md mx-auto">
+      {/* бумажная подложка */}
       <div
-        className="absolute inset-4 rounded-2xl shadow-lg rotate-[4deg]"
+        className="absolute inset-3 rounded-[32px] rotate-[3deg]"
         style={{ backgroundColor: "#e4d9c2", border: "1px solid var(--border)" }}
+        aria-hidden
       />
-      {/* основная обложка */}
+
+      {/* основная иллюстрация */}
       <div
-        className="absolute inset-0 rounded-2xl overflow-hidden -rotate-[3deg] shadow-xl"
+        className="absolute inset-0 rounded-[32px] overflow-hidden -rotate-[2deg]"
         style={{
-          background:
-            "linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%)",
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-lg)",
         }}
       >
-        <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-between text-white">
-          <div>
-            <div className="text-[10px] tracking-[0.3em] uppercase opacity-70">
-              Vol. 01 · 2026
-            </div>
-            <div className="mt-2 w-10 h-px bg-white/50" />
-          </div>
-
-          <div>
-            <div className="text-[11px] uppercase tracking-widest opacity-70 mb-3">
-              Smart Kids Library
-            </div>
-            <div className="font-display text-[44px] leading-[0.95] font-semibold">
-              {kk ? "Оқы.\nОйла.\nЖаса." : "Читай.\nДумай.\nТвори."}
-              <br />
-            </div>
-          </div>
-
-          <div className="flex items-end justify-between text-[11px] opacity-70">
-            <span>Сатпаев · Satpayev</span>
-            <span className="font-mono">ISSN 1970</span>
-          </div>
-        </div>
+        <Image
+          src="/illustrations/hero-reading.jpg"
+          alt={kk ? "Балалар кітап оқып отыр" : "Дети читают книгу вместе"}
+          fill
+          sizes="(max-width: 768px) 90vw, 480px"
+          className="object-cover"
+          priority
+        />
       </div>
 
       {/* круглая «печать» */}
@@ -409,7 +426,7 @@ function HeroBookArt({ kk }: { kk: boolean }) {
 
       {/* декоративный лейбл */}
       <div
-        className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase rotate-[6deg]"
+        className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase rotate-[6deg] z-10"
         style={{ backgroundColor: "var(--surface)", color: "var(--primary)", border: "1px solid var(--border)" }}
       >
         {kk ? "Жаңа басылым" : "Новое издание"}
