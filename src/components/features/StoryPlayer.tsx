@@ -99,7 +99,7 @@ export default function StoryPlayer({ text, locale, audioUrl }: StoryPlayerProps
           ? locale === "kk" ? "Дайындалуда…" : "Готовлю аудио…"
           : isPlaying
           ? locale === "kk" ? "Ойнатылуда…" : "Воспроизведение…"
-          : locale === "kk" ? "Тыңдау (Gemini AI)" : "Послушать (Gemini AI)"}
+          : locale === "kk" ? "Тыңдау" : "Послушать"}
       </span>
     </div>
   );

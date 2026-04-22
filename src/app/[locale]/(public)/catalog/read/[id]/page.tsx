@@ -1,5 +1,18 @@
 import { isValidLocale, type Locale } from "@/lib/i18n";
+import { notFound } from "next/navigation";
 import BookReader from "@/components/features/BookReader";
+import { getOne } from "@/lib/db";
+
+interface Book {
+  id: number;
+  title: string;
+  author: string | null;
+  description: string | null;
+  page_count: number | null;
+  language: string | null;
+  file_url: string | null;
+  is_available: boolean;
+}
 
 export default async function ReadPage({
   params,
@@ -9,32 +22,28 @@ export default async function ReadPage({
   const { locale, id } = await params;
   const validLocale: Locale = isValidLocale(locale) ? locale : "ru";
 
-  // In production, fetch book content from DB
-  const sampleContent = validLocale === "kk"
-    ? `Бір заманда, кішкентай планетада бір ханзада тұрды. Оның планетасы үйден сәл ғана үлкен еді. Ханзаданың бір гүлі бар еді — әдемі роза. Ол розаны күн сайын суарып, жел-боранннан қорғайтын.
+  const bookId = parseInt(id, 10);
+  if (!bookId) notFound();
 
-Бір күні ханзада шешім қабылдады — басқа планеталарға саяхатқа шығуды. Ол жеті планетаны аралады, әрқайсысында бір-бір адам тұрды.
+  const book = await getOne<Book>(
+    "SELECT id, title, author, description, page_count, language, file_url, is_available FROM books WHERE id = $1",
+    [bookId]
+  );
+  if (!book) notFound();
 
-Бірінші планетада патша тұрды. Ол бүкіл әлемді билегісі келді, бірақ оның бағыныштылары жоқ еді.
+  const kk = validLocale === "kk";
+  const noticeRu = `\n\n———\n\nЭто аннотация книги — полный текст доступен в бумажном виде в библиотеке (адрес: ул. Кусаинова, 31-1) или попросите библиотекаря отсканировать главы.${book.file_url ? `\n\nПрямая ссылка: ${book.file_url}` : ""}`;
+  const noticeKk = `\n\n———\n\nБұл — кітаптың аннотациясы. Толық мәтінді кітапханадан (Қусайынов к-сі, 31-1) алуға немесе кітапханашыдан тарауларды сұрауға болады.${book.file_url ? `\n\nТікелей сілтеме: ${book.file_url}` : ""}`;
 
-Екінші планетада мақтаншақ тұрды. Ол барлығының оны мақтағанын қалады.
-
-Үшінші планетада маскүнем тұрды. Ол ішкеннін ұмыту үшін ішетін.`
-    : `Когда мне было шесть лет, я увидел однажды удивительную картинку в книге «Правдивые истории из жизни». На картинке был нарисован удав, который глотал хищного зверя.
-
-Я долго думал о приключениях в джунглях и в конце концов нарисовал цветным карандашом свою первую картинку. Это был мой рисунок номер один.
-
-Я показал своё произведение взрослым и спросил, не страшно ли им. Они ответили: «Разве шляпа может быть страшной?»
-
-А это была вовсе не шляпа. Это был удав, который проглотил слона. Тогда я нарисовал удава изнутри, чтобы взрослым было понятнее.`;
+  const content = (book.description || (kk ? "Сипаттама әлі жоқ." : "Описание пока отсутствует.")) + (kk ? noticeKk : noticeRu);
 
   return (
     <div className="min-h-screen">
       <BookReader
-        bookId={parseInt(id)}
-        title={validLocale === "kk" ? "Кішкентай ханзада" : "Маленький принц"}
-        content={sampleContent}
-        totalPages={96}
+        bookId={book.id}
+        title={book.title}
+        content={content}
+        totalPages={Math.max(1, book.page_count ?? 1)}
         initialPage={1}
         locale={validLocale}
       />

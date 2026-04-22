@@ -8,11 +8,13 @@ import { NextResponse } from "next/server";
  */
 const MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
 
-// Voice options for Live: библиотекарь дружелюбный, рассказчик
+// Голоса Gemini Live (мужские/женские, prebuilt).
+// Кітапхан — мужской дружелюбный → Puck (игривый, тёплый, мужской).
+// Альтернативы: Charon (низкий, серьёзный), Fenrir (хриплый), Orus (нейтральный).
 const VOICES = {
-  librarian: "Aoede", // тёплый, мягкий
-  narrator: "Charon", // повествовательный
-  child: "Puck", // игривый
+  librarian: "Puck",   // мужской, дружелюбный, тёплый — ДЕФОЛТ для Кітапхана
+  narrator: "Charon",  // мужской, низкий, серьёзный — для повествования
+  child: "Puck",       // тот же — для детских режимов
 };
 
 export async function POST(request: Request) {

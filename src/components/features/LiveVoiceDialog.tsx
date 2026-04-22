@@ -254,7 +254,7 @@ export default function LiveVoiceDialog({ locale, topic }: Props) {
             {isKk ? "Тірі дауыстық диалог" : "Живой голосовой диалог"}
           </h3>
           <p className="text-xs mt-1" style={{ color: "var(--foreground-muted)" }}>
-            {isKk ? "Gemini native-audio · қазақ/орыс тілдері" : "Gemini native-audio · KK/RU"}
+            {isKk ? "Қазақша және орысша · табиғи дауыс" : "Казахский и русский · естественный голос"}
           </p>
         </div>
         <div className="flex items-center gap-2">

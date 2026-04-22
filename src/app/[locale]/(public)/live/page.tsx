@@ -22,8 +22,8 @@ export default async function LivePage({
         </h1>
         <p className="mt-5 text-lg" style={{ color: "var(--foreground-muted)" }}>
           {kk
-            ? "Gemini Live native-audio · қазақ және орыс тілдерінде. Микрофон қажет."
-            : "Gemini Live native-audio · казахский и русский языки. Нужен доступ к микрофону."}
+            ? "Қазақ және орыс тілдерінде табиғи дауыс. Микрофон қажет."
+            : "Естественный голос на казахском и русском. Нужен доступ к микрофону."}
         </p>
       </header>
 

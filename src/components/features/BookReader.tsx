@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Button from "@/components/ui/Button";
+import BookTTS from "./BookTTS";
 
 interface BookReaderProps {
   bookId: number;
@@ -132,6 +133,16 @@ export default function BookReader({ bookId, title, content, totalPages, initial
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
           </button>
+
+          {/* TTS — озвучить страницу */}
+          {content && (
+            <BookTTS
+              text={content.substring(0, 4000)}
+              language={locale === "kk" ? "kk" : "ru"}
+              size="sm"
+              label={locale === "kk" ? "🔊 Тыңдау" : "🔊 Слушать"}
+            />
+          )}
         </div>
       </div>
 

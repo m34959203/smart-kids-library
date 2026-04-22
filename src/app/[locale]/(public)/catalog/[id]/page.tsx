@@ -1,7 +1,38 @@
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import BookTTS from "@/components/features/BookTTS";
+import { getOne } from "@/lib/db";
+
+interface Book {
+  id: number;
+  title: string;
+  author: string | null;
+  description: string | null;
+  cover_url: string | null;
+  genre: string | null;
+  age_category: string | null;
+  year: number | null;
+  language: string | null;
+  page_count: number | null;
+  is_available: boolean;
+  isbn: string | null;
+  file_url: string | null;
+}
+
+const FALLBACK_COVERS = [
+  "/covers/cover-01.jpg", "/covers/cover-02.jpg", "/covers/cover-03.jpg", "/covers/cover-04.jpg",
+  "/covers/cover-05.jpg", "/covers/cover-06.jpg", "/covers/cover-07.jpg", "/covers/cover-08.jpg",
+];
+function pickCover(id: number, title: string): string {
+  const seed = `${id}-${title}`;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return FALLBACK_COVERS[Math.abs(h) % FALLBACK_COVERS.length];
+}
 
 export default async function BookDetailPage({
   params,
@@ -11,74 +42,78 @@ export default async function BookDetailPage({
   const { locale, id } = await params;
   const validLocale: Locale = isValidLocale(locale) ? locale : "ru";
   const messages = await getMessages(validLocale);
+  const kk = validLocale === "kk";
 
-  // Sample book data (in production, fetched from API/DB)
-  const book = {
-    id: parseInt(id),
-    title: validLocale === "kk" ? "Кішкентай ханзада" : "Маленький принц",
-    author: validLocale === "kk" ? "Антуан де Сент-Экзюпери" : "Антуан де Сент-Экзюпери",
-    description: validLocale === "kk"
-      ? "Әлемге белгілі повесть-ертегі дос, махаббат және жауапкершілік туралы."
-      : "Всемирно известная повесть-сказка о дружбе, любви и ответственности.",
-    genre: validLocale === "kk" ? "Повесть" : "Повесть",
-    age_category: "10-13",
-    year: 1943,
-    language: validLocale === "kk" ? "Қазақша" : "Русский",
-    page_count: 96,
-    is_available: true,
-    isbn: "978-5-699-12014-7",
-  };
+  const bookId = parseInt(id, 10);
+  if (!bookId) notFound();
+
+  const book = await getOne<Book>("SELECT * FROM books WHERE id = $1", [bookId]);
+  if (!book) notFound();
+
+  const ttsLang: "ru" | "kk" = (book.language === "kk" ? "kk" : "ru");
+  const ttsText = `${book.title}. ${book.author ? "Автор: " + book.author + ". " : ""}${book.description ?? ""}`.trim();
+  const cover = book.cover_url || pickCover(book.id, book.title);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link href={`/${validLocale}/catalog`} className="text-purple-500 hover:text-purple-700 text-sm mb-4 inline-block">
-        &larr; {t(messages, "common.back")}
+    <div className="max-w-5xl mx-auto px-4 py-10 md:py-14">
+      <Link href={`/${validLocale}/catalog`} className="text-sm font-medium hover:underline" style={{ color: "var(--primary)" }}>
+        ← {t(messages, "common.back")}
       </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
         <div className="md:col-span-1">
-          <div className="aspect-[3/4] bg-gradient-to-br from-purple-200 to-pink-200 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg className="w-24 h-24 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+          <div className="aspect-[3/4] relative rounded-2xl overflow-hidden shadow-lg" style={{ background: "var(--muted)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={cover} alt={book.title} className="w-full h-full object-cover" />
           </div>
         </div>
 
-        <div className="md:col-span-2 space-y-4">
-          <h1 className="text-3xl font-bold text-purple-900">{book.title}</h1>
-          <p className="text-lg text-gray-600">{book.author}</p>
+        <div className="md:col-span-2 space-y-5">
+          <div>
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground leading-tight">
+              {book.title}
+            </h1>
+            {book.author && <p className="text-lg mt-2" style={{ color: "var(--foreground-muted)" }}>{book.author}</p>}
+          </div>
 
           <div className="flex flex-wrap gap-2">
-            <Badge variant="purple">{book.genre}</Badge>
-            <Badge variant="info">{book.age_category}</Badge>
+            {book.genre && <Badge variant="purple">{book.genre}</Badge>}
+            {book.age_category && <Badge variant="info">{book.age_category}</Badge>}
             <Badge variant={book.is_available ? "success" : "danger"}>
               {book.is_available ? t(messages, "catalog.available") : t(messages, "catalog.unavailable")}
             </Badge>
           </div>
 
-          <p className="text-gray-700 leading-relaxed">{book.description}</p>
+          {book.description && (
+            <div className="space-y-3">
+              <p className="leading-relaxed" style={{ color: "var(--foreground)" }}>
+                {book.description}
+              </p>
+              <BookTTS
+                text={ttsText}
+                language={ttsLang}
+                label={kk ? "Аннотацияны тыңдау" : "Послушать аннотацию"}
+                size="md"
+              />
+            </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-4 bg-purple-50 rounded-2xl p-4">
-            <div>
-              <span className="text-xs text-gray-500">{t(messages, "catalog.year")}</span>
-              <p className="font-medium text-purple-900">{book.year}</p>
-            </div>
-            <div>
-              <span className="text-xs text-gray-500">{t(messages, "catalog.language")}</span>
-              <p className="font-medium text-purple-900">{book.language}</p>
-            </div>
-            <div>
-              <span className="text-xs text-gray-500">{t(messages, "catalog.pages")}</span>
-              <p className="font-medium text-purple-900">{book.page_count}</p>
-            </div>
-            <div>
-              <span className="text-xs text-gray-500">ISBN</span>
-              <p className="font-medium text-purple-900">{book.isbn}</p>
-            </div>
+          <div className="grid grid-cols-2 gap-4 rounded-2xl p-4" style={{ background: "var(--muted)" }}>
+            {book.year && (
+              <Info label={t(messages, "catalog.year")} value={String(book.year)} />
+            )}
+            {book.language && (
+              <Info label={t(messages, "catalog.language")} value={book.language === "kk" ? "Қазақша" : book.language === "ru" ? "Русский" : book.language} />
+            )}
+            {book.page_count && (
+              <Info label={t(messages, "catalog.pages")} value={String(book.page_count)} />
+            )}
+            {book.isbn && (
+              <Info label="ISBN" value={book.isbn} />
+            )}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {book.is_available && (
               <Link href={`/${validLocale}/catalog/read/${book.id}`}>
                 <Button size="lg">{t(messages, "catalog.readOnline")}</Button>
@@ -88,6 +123,15 @@ export default async function BookDetailPage({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="text-xs uppercase tracking-widest" style={{ color: "var(--foreground-muted)" }}>{label}</span>
+      <p className="font-medium mt-1" style={{ color: "var(--foreground)" }}>{value}</p>
     </div>
   );
 }
