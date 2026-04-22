@@ -66,6 +66,7 @@ export default async function HomePage({
       desc: kk ? "Ертегілер, бояулар, дыбыстық оқу" : "Сказки, раскраски, аудиокниги",
       accent: "var(--accent)",
       swatch: "#fce3d1",
+      image: "/illustrations/age-6-9.jpg",
     },
     {
       group: "10-13",
@@ -74,6 +75,7 @@ export default async function HomePage({
       desc: kk ? "Каталог, викториналар, шеберхана" : "Каталог, викторины, мастерская",
       accent: "var(--primary)",
       swatch: "#d9ebe4",
+      image: "/illustrations/age-10-13.jpg",
     },
     {
       group: "14-17",
@@ -82,6 +84,7 @@ export default async function HomePage({
       desc: kk ? "Емтиханға дайындық, эссе, кеңес" : "Подготовка к экзаменам, эссе, советы",
       accent: "#1c3a31",
       swatch: "#e4d9c2",
+      image: "/illustrations/age-14-17.jpg",
     },
   ];
 
@@ -220,34 +223,49 @@ export default async function HomePage({
             {ageGroups.map((ag, i) => (
               <Link key={ag.group} href={`/${validLocale}/catalog?age=${ag.group}`} className="group block">
                 <article
-                  className="h-full rounded-2xl p-6 transition-all hover:-translate-y-0.5"
+                  className="h-full rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 flex flex-col"
                   style={{
                     backgroundColor: ag.swatch,
                     border: "1px solid var(--border)",
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs tracking-widest" style={{ color: "var(--foreground-muted)" }}>
-                      №0{i + 1}
-                    </span>
-                    <span
-                      className="text-[11px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
-                      style={{ color: ag.accent, backgroundColor: "rgba(255,255,255,0.6)" }}
-                    >
-                      {ag.label}
-                    </span>
+                  <div className="relative w-full aspect-[3/4]" style={{ backgroundColor: ag.swatch }}>
+                    <Image
+                      src={ag.image}
+                      alt={ag.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover"
+                      priority={i === 0}
+                    />
+                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                      <span
+                        className="font-mono text-xs tracking-widest px-2 py-1 rounded-full"
+                        style={{ color: "var(--foreground-muted)", backgroundColor: "rgba(250,245,234,0.85)" }}
+                      >
+                        №0{i + 1}
+                      </span>
+                      <span
+                        className="text-[11px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                        style={{ color: ag.accent, backgroundColor: "rgba(250,245,234,0.85)" }}
+                      >
+                        {ag.label}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="mt-8 font-display text-2xl font-semibold text-foreground">
-                    {ag.title}
-                  </h3>
-                  <p className="mt-2 text-sm" style={{ color: "var(--foreground-muted)" }}>
-                    {ag.desc}
-                  </p>
-                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium" style={{ color: ag.accent }}>
-                    {kk ? "Көру" : "Смотреть"}
-                    <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
+                  <div className="p-6 flex flex-col flex-1">
+                    <h3 className="font-display text-2xl font-semibold text-foreground">
+                      {ag.title}
+                    </h3>
+                    <p className="mt-2 text-sm" style={{ color: "var(--foreground-muted)" }}>
+                      {ag.desc}
+                    </p>
+                    <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium" style={{ color: ag.accent }}>
+                      {kk ? "Көру" : "Смотреть"}
+                      <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </div>
                   </div>
                 </article>
               </Link>
