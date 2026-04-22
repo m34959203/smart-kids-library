@@ -5,6 +5,47 @@ import Image from "next/image";
 import BookRecommendations from "@/components/features/BookRecommendations";
 import ContextualHints from "@/components/features/ContextualHints";
 import UpcomingEventsWidget from "@/components/features/UpcomingEventsWidget";
+import { getOne } from "@/lib/db";
+
+/**
+ * Цифры для hero-блока: реальные счётчики из БД + редактируемые
+ * через site_settings (library_books_total, library_readers_total)
+ * на случай если заказчик хочет показывать оценку фонда (а не только
+ * то что уже импортировано в catalog), либо дашборд активных читателей
+ * которые ходят в библиотеку, а не только зарегистрированных в системе.
+ */
+async function getHomeStats(): Promise<{ books: string; readers: string; years: string }> {
+  let booksCount = 0;
+  let usersCount = 0;
+  let founded = 2006;
+  let manualBooks: string | null = null;
+  let manualReaders: string | null = null;
+
+  try {
+    const [b, u, f, mb, mr] = await Promise.all([
+      getOne<{ count: string }>("SELECT COUNT(*)::text AS count FROM books"),
+      getOne<{ count: string }>("SELECT COUNT(*)::text AS count FROM users WHERE role IN ('reader','user') OR role IS NULL"),
+      getOne<{ value: string }>("SELECT value FROM site_settings WHERE key='library_founded'"),
+      getOne<{ value: string }>("SELECT value FROM site_settings WHERE key='library_books_total'"),
+      getOne<{ value: string }>("SELECT value FROM site_settings WHERE key='library_readers_total'"),
+    ]);
+    booksCount = parseInt(b?.count ?? "0", 10);
+    usersCount = parseInt(u?.count ?? "0", 10);
+    if (f?.value) founded = parseInt(f.value, 10) || 2006;
+    manualBooks = mb?.value || null;
+    manualReaders = mr?.value || null;
+  } catch {
+    /* fall through to defaults */
+  }
+
+  // Если админ задал «manual» в site_settings — показываем его.
+  // Иначе — реальный COUNT, но если 0 — прочерк, чтобы не выглядело сиротливо.
+  const fmt = (n: number) => (n > 0 ? n.toLocaleString("ru-RU") : "—");
+  const books = manualBooks?.trim() || fmt(booksCount);
+  const readers = manualReaders?.trim() || fmt(usersCount);
+  const years = String(Math.max(0, new Date().getFullYear() - founded));
+  return { books, readers, years };
+}
 
 export default async function HomePage({
   params,
@@ -15,6 +56,7 @@ export default async function HomePage({
   const validLocale: Locale = isValidLocale(locale) ? locale : "ru";
   const messages = await getMessages(validLocale);
   const kk = validLocale === "kk";
+  const stats = await getHomeStats();
 
   const ageGroups = [
     {
@@ -122,12 +164,15 @@ export default async function HomePage({
                 </Link>
               </div>
 
-              {/* Метрики — в стиле газеты */}
+              {/* Метрики — в стиле газеты. Цифры тянутся из БД и site_settings:
+                  library_books_total / library_readers_total можно вручную задать
+                  через /admin/knowledge → tab Tone (или напрямую settings),
+                  иначе показываются реальные COUNT(*). */}
               <dl className="mt-12 grid grid-cols-3 gap-6 max-w-lg">
                 {[
-                  { k: "12 400+", v: kk ? "кітап қорда" : "книг в фонде" },
-                  { k: "2 800+",  v: kk ? "белсенді оқырман" : "активных читателей" },
-                  { k: "55",      v: kk ? "жылдық тарих" : "лет истории" },
+                  { k: stats.books, v: kk ? "кітап қорда" : "книг в фонде" },
+                  { k: stats.readers, v: kk ? "белсенді оқырман" : "активных читателей" },
+                  { k: stats.years, v: kk ? "жылдық тарих" : "лет истории" },
                 ].map((m) => (
                   <div key={m.v}>
                     <dt className="font-display text-3xl md:text-4xl font-semibold" style={{ color: "var(--primary)" }}>{m.k}</dt>
