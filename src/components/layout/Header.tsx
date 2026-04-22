@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import AgeProfileSwitcher from "./AgeProfileSwitcher";
 import AgeMenu from "./AgeMenu";
+import GlobalSearch from "@/components/features/GlobalSearch";
 import { BookIcon } from "@/components/icons/age-icons";
 
 interface HeaderProps {
@@ -45,6 +46,11 @@ export default function Header({ locale, messages }: HeaderProps) {
           <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
             <AgeMenu locale={locale} fallback={navLinks} />
           </nav>
+
+          {/* Global search (desktop) */}
+          <div className="hidden md:block flex-1 max-w-md mx-4">
+            <GlobalSearch locale={locale} />
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-2">
@@ -89,7 +95,10 @@ export default function Header({ locale, messages }: HeaderProps) {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-purple-100 animate-slide-up">
-          <nav className="max-w-7xl mx-auto px-4 py-4 space-y-1" aria-label="Mobile">
+          <nav className="max-w-7xl mx-auto px-4 py-4 space-y-3" aria-label="Mobile">
+            <div className="md:hidden">
+              <GlobalSearch locale={locale} />
+            </div>
             <AgeMenu locale={locale} fallback={navLinks} variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
             <Link
               href={`/${locale}/services`}

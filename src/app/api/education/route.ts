@@ -3,6 +3,8 @@ import { generateText } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
+import { getMany } from "@/lib/db";
+import { detectLanguage } from "@/lib/lang-detect";
 
 const schema = v.object({
   type: v.optional(v.enum(["workshop", "literature", "essay", "general"] as const)),
@@ -32,7 +34,33 @@ export async function POST(request: NextRequest) {
   if (!parsed.ok) {
     return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
   }
-  const { type = "general", mode, action, text, topic, grade, language = "ru" } = parsed.data;
+  const { type = "general", mode, action, text, topic, grade, language: explicitLang } = parsed.data;
+  const language: "ru" | "kk" = explicitLang ?? detectLanguage(`${topic ?? ""} ${text ?? ""}`);
+
+  // Если запрос — рекомендация литературы по классу, тянем из школьной программы РК
+  if (type === "literature" && grade && !text) {
+    try {
+      const subject = topic?.trim();
+      const rows = await getMany<{ title: string; author: string | null; description: string | null; subject: string; kind: string; language: string }>(
+        subject
+          ? `SELECT title, author, description, subject, kind, language FROM school_curriculum
+             WHERE grade = $1 AND (subject ILIKE $2 OR title ILIKE $2)
+             ORDER BY kind, title LIMIT 30`
+          : `SELECT title, author, description, subject, kind, language FROM school_curriculum
+             WHERE grade = $1 ORDER BY subject, kind LIMIT 30`,
+        subject ? [grade, `%${subject}%`] : [grade]
+      );
+      if (rows.length > 0) {
+        const list = rows
+          .map((r) => `• ${r.author ? r.author + " — " : ""}«${r.title}» (${r.subject}, ${r.kind === "required" ? "обязательная" : "доп."})`)
+          .join("\n");
+        const header = language === "kk" ? `${grade}-сыныпқа арналған әдебиет:` : `Литература для ${grade} класса:`;
+        return NextResponse.json({ suggestion: `${header}\n\n${list}`, source: "curriculum", count: rows.length });
+      }
+    } catch {
+      /* fallback на AI ниже */
+    }
+  }
 
   const withinLimit = await isWithinTokenLimit();
   if (!withinLimit) {

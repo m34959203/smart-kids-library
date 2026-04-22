@@ -1,5 +1,6 @@
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Card from "@/components/ui/Card";
+import CmsBlock from "@/components/features/CmsBlock";
 
 export default async function RulesPage({
   params,
@@ -33,6 +34,7 @@ export default async function RulesPage({
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-purple-900 mb-6">{t(messages, "rules.title")}</h1>
+      <div className="mb-6"><CmsBlock slug="rules" locale={validLocale} /></div>
       <Card className="p-6 md:p-8">
         <ol className="space-y-4">
           {rules.map((rule, i) => (

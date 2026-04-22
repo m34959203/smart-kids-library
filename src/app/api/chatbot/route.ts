@@ -5,6 +5,7 @@ import { getMany, query } from "@/lib/db";
 import { v4 as uuid } from "uuid";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
+import { detectLanguage } from "@/lib/lang-detect";
 
 const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
   general: {
@@ -72,7 +73,9 @@ export async function POST(request: NextRequest) {
   if (!parsed.ok) {
     return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
   }
-  const { message, mode = "general", language = "ru", history = [], sessionId: incomingSession } = parsed.data;
+  const { message, mode = "general", language: explicitLang, history = [], sessionId: incomingSession } = parsed.data;
+  // Авто-определение языка по тексту запроса (если параметр не задан явно)
+  const language: "ru" | "kk" = explicitLang ?? detectLanguage(message);
 
   if (BLOCKED_PATTERNS.some((re) => re.test(message))) {
     const polite = language === "kk"

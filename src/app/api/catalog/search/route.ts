@@ -4,6 +4,7 @@ import { generateJSON } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
+import { detectLanguage } from "@/lib/lang-detect";
 
 const schema = v.object({
   query: v.string({ max: 200 }),
@@ -18,7 +19,8 @@ export async function POST(request: NextRequest) {
   if (!parsed.ok) {
     return NextResponse.json({ books: [], suggestedFilters: [] });
   }
-  const { query: searchQuery, language = "ru" } = parsed.data;
+  const { query: searchQuery, language: explicitLang } = parsed.data;
+  const language: "ru" | "kk" = explicitLang ?? detectLanguage(searchQuery);
 
   if (!searchQuery.trim()) {
     return NextResponse.json({ books: [], suggestedFilters: [] });

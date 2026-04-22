@@ -51,6 +51,7 @@ const upsertSchema = v.object({
   excerpt_ru: v.optional(v.string({ max: 1000 })),
   excerpt_kk: v.optional(v.string({ max: 1000 })),
   image_url: v.optional(v.string({ max: 2048 })),
+  video_url: v.optional(v.string({ max: 2048 })),
   category: v.optional(v.string({ max: 100 })),
   status: v.optional(v.enum(["draft", "published", "archived"] as const)),
 });
@@ -64,6 +65,7 @@ interface NewsBody {
   excerpt_ru?: string;
   excerpt_kk?: string;
   image_url?: string;
+  video_url?: string;
   category?: string;
   status?: "draft" | "published" | "archived";
 }
@@ -82,8 +84,8 @@ export async function POST(request: NextRequest) {
 
   const result = await query<{ id: number }>(
     `INSERT INTO news (slug, title_kk, title_ru, content_kk, content_ru, excerpt_kk, excerpt_ru,
-                       image_url, category, author_id, status, published_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CASE WHEN $11 = 'published' THEN NOW() ELSE NULL END)
+                       image_url, video_url, category, author_id, status, published_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CASE WHEN $12 = 'published' THEN NOW() ELSE NULL END)
      RETURNING id`,
     [
       slug,
@@ -94,6 +96,7 @@ export async function POST(request: NextRequest) {
       b.excerpt_kk ?? null,
       b.excerpt_ru ?? null,
       b.image_url ?? null,
+      b.video_url ?? null,
       b.category ?? null,
       userId,
       b.status ?? "draft",
@@ -140,9 +143,9 @@ export async function PUT(request: NextRequest) {
       title_kk = $3, title_ru = $4,
       content_kk = $5, content_ru = $6,
       excerpt_kk = $7, excerpt_ru = $8,
-      image_url = $9, category = $10,
-      status = COALESCE($11, status),
-      published_at = CASE WHEN $11 = 'published' AND published_at IS NULL THEN NOW() ELSE published_at END
+      image_url = $9, video_url = $10, category = $11,
+      status = COALESCE($12, status),
+      published_at = CASE WHEN $12 = 'published' AND published_at IS NULL THEN NOW() ELSE published_at END
      WHERE id = $1`,
     [
       body.id,
@@ -154,6 +157,7 @@ export async function PUT(request: NextRequest) {
       b.excerpt_kk ?? null,
       b.excerpt_ru ?? null,
       b.image_url ?? null,
+      b.video_url ?? null,
       b.category ?? null,
       b.status ?? null,
     ]

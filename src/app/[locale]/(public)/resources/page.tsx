@@ -1,6 +1,7 @@
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Card from "@/components/ui/Card";
 import Link from "next/link";
+import CmsBlock from "@/components/features/CmsBlock";
 
 export default async function ResourcesPage({
   params,
@@ -23,6 +24,7 @@ export default async function ResourcesPage({
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-purple-900 mb-6">{t(messages, "resources.title")}</h1>
+      <div className="mb-6"><CmsBlock slug="resources" locale={validLocale} /></div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {resources.map((r) => (
           <Link key={r.title} href={r.href}>
