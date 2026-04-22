@@ -51,6 +51,16 @@ export default function BottomNav({ locale }: BottomNavProps) {
       ),
     },
     {
+      href: `/${locale}/live`,
+      label: locale === "kk" ? "Дауыс" : "Голос",
+      icon: (
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0m14 0v3m-7 7v-3m-7-7v3m7 0a3 3 0 003-3V8a3 3 0 00-6 0v3a3 3 0 003 3z" />
+        </svg>
+      ),
+      highlight: true,
+    },
+    {
       href: `/${locale}/profile`,
       label: locale === "kk" ? "Профиль" : "Профиль",
       icon: (
@@ -75,6 +85,7 @@ export default function BottomNav({ locale }: BottomNavProps) {
       <div className="flex justify-around items-center h-16">
         {items.map((item) => {
           const isActive = pathname === item.href || (item.href !== `/${locale}` && pathname.startsWith(item.href));
+          const highlight = "highlight" in item && item.highlight;
           return (
             <Link
               key={item.href}
@@ -83,7 +94,7 @@ export default function BottomNav({ locale }: BottomNavProps) {
                 "relative flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
               )}
               style={{
-                color: isActive ? "var(--primary)" : "var(--foreground-muted)",
+                color: highlight ? "var(--primary)" : isActive ? "var(--primary)" : "var(--foreground-muted)",
               }}
             >
               {isActive && (

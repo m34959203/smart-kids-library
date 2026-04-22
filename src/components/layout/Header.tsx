@@ -50,7 +50,7 @@ export default function Header({ locale, messages }: HeaderProps) {
                 Smart Kids Library
               </span>
               <span className="text-[11px] tracking-[0.18em] uppercase mt-0.5" style={{ color: "var(--foreground-muted)" }}>
-                Satpayev · с 1970
+                Satpayev · с 2006
               </span>
             </div>
           </Link>
@@ -135,19 +135,48 @@ export default function Header({ locale, messages }: HeaderProps) {
             borderTop: "1px solid var(--border)",
           }}
         >
-          <nav className="max-w-7xl mx-auto px-4 py-4 space-y-3" aria-label="Mobile">
-            <div className="md:hidden">
+          <nav className="max-w-7xl mx-auto px-4 py-4 space-y-2" aria-label="Mobile">
+            <div>
               <GlobalSearch locale={locale} />
             </div>
-            <AgeMenu locale={locale} fallback={navLinks} variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
+
+            {/* Live — на мобиле выделенной кнопкой */}
             <Link
-              href={`/${locale}/services`}
-              className="block px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-muted transition-all"
-              style={{ color: "var(--foreground-muted)" }}
+              href={`/${locale}/live`}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold"
+              style={{ background: "var(--primary)", color: "white" }}
               onClick={() => setMobileMenuOpen(false)}
             >
-              {nav.services ?? "Services"}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0m14 0v3m-7 7v-3m-7-7v3m7 0a3 3 0 003-3V8a3 3 0 00-6 0v3a3 3 0 003 3z" />
+              </svg>
+              {locale === "kk" ? "Тірі дауыстық диалог" : "Живой голосовой диалог"}
             </Link>
+
+            <div className="pt-2 pb-1 px-4 text-[10px] uppercase tracking-widest" style={{ color: "var(--foreground-muted)" }}>
+              {locale === "kk" ? "Бөлімдер" : "Разделы"}
+            </div>
+            <AgeMenu locale={locale} fallback={navLinks} variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
+
+            <div className="pt-2 pb-1 px-4 text-[10px] uppercase tracking-widest" style={{ color: "var(--foreground-muted)" }}>
+              {locale === "kk" ? "Кітапхана" : "Библиотека"}
+            </div>
+            {[
+              { href: `/${locale}/about`, label: nav.about ?? "О библиотеке" },
+              { href: `/${locale}/rules`, label: nav.rules ?? "Правила" },
+              { href: `/${locale}/services`, label: nav.services ?? "Услуги" },
+              { href: `/${locale}/contacts`, label: nav.contacts ?? "Контакты" },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="block px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-muted transition-all"
+                style={{ color: "var(--foreground-muted)" }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {l.label}
+              </Link>
+            ))}
           </nav>
         </div>
       )}

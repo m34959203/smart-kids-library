@@ -24,7 +24,7 @@ export function organizationSchema() {
     address: {
       "@type": "PostalAddress",
       addressLocality: "Сатпаев",
-      streetAddress: "ул. Абая, 1",
+      streetAddress: "ул. Кусаинова, 31-1",
       addressCountry: "KZ",
     },
     telephone: "+7-710-63-1-23-45",
@@ -80,7 +80,7 @@ export function eventSchema(event: {
       ? {
           "@type": "Place",
           name: event.location,
-          address: "г. Сатпаев, ул. Абая, 1",
+          address: "г. Сатпаев, ул. Кусаинова, 31-1",
         }
       : undefined,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",

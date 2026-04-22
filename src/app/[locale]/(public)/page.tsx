@@ -126,7 +126,7 @@ export default async function HomePage({
             <div className="md:col-span-7">
               <div className="section-eyebrow mb-6 flex items-center gap-3">
                 <span className="inline-block w-8 h-px bg-current" aria-hidden />
-                {kk ? "Сәтбаев қаласы · 1970" : "Город Сатпаев · с 1970"}
+                {kk ? `Сәтбаев қаласы · ${stats.years} жыл` : `Город Сатпаев · с 2006`}
               </div>
               <h1 className="display-hero text-[44px] md:text-[72px] leading-[1.02] text-foreground">
                 {kk ? "Оқу әлеміне" : "Библиотека,"}

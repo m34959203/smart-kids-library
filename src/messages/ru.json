@@ -183,10 +183,13 @@
   "contacts": {
     "title": "Контакты",
     "address": "Адрес",
-    "addressText": "г. Сатпаев, ул. Абая, 1",
+    "addressText": "Улытауская обл., г. Сатпаев, ул. Кусаинова, 31-1",
     "phone": "Телефон",
     "email": "Email",
-    "socialMedia": "Социальные сети"
+    "socialMedia": "Социальные сети",
+    "phoneText": "+7 (71063) 7-49-62 · +7 (71063) 7-46-44",
+    "emailText": "biblioteka_15.86@mail.ru",
+    "hoursText": "Пн-Пт 9:00-18:00 · Сб 10:00-16:00 · Вс выходной"
   },
   "rules": {
     "title": "Правила библиотеки"
@@ -214,6 +217,6 @@
   "footer": {
     "copyright": "Smart Kids Library Satpayev",
     "rights": "Все права защищены",
-    "address": "г. Сатпаев, Караганда, Казахстан"
+    "address": "Улытауская обл., г. Сатпаев, ул. Кусаинова, 31-1"
   }
 }

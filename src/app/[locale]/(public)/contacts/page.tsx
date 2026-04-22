@@ -38,7 +38,7 @@ export default async function ContactsPage({
               </div>
               <div>
                 <h3 className="font-bold text-purple-900">{t(messages, "contacts.phone")}</h3>
-                <p className="text-gray-600">+7 (710) 63-1-23-45</p>
+                <p className="text-gray-600">+7 (71063) 7-49-62</p>
               </div>
             </div>
 
@@ -50,7 +50,7 @@ export default async function ContactsPage({
               </div>
               <div>
                 <h3 className="font-bold text-purple-900">{t(messages, "contacts.email")}</h3>
-                <p className="text-gray-600">library@satpaev.kz</p>
+                <p className="text-gray-600">biblioteka_15.86@mail.ru</p>
               </div>
             </div>
           </div>

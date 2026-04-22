@@ -10,7 +10,9 @@ const csp = [
   // Next.js injects inline runtime scripts; Gemini/TTS are fetched client-side.
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self' https://generativelanguage.googleapis.com https://api.elevenlabs.io https://api.telegram.org https://graph.facebook.com",
+  // wss: нужен для Gemini Live (BidiGenerateContent — WebSocket).
+  // В dev добавлен ws:/wss: localhost для HMR через quick tunnel.
+  "connect-src 'self' https://generativelanguage.googleapis.com wss://generativelanguage.googleapis.com https://api.elevenlabs.io https://api.telegram.org https://graph.facebook.com ws: wss:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
