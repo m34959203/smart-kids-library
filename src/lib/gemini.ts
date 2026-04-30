@@ -9,7 +9,22 @@ let genAI: GoogleGenerativeAI | null = null;
 const MODEL_DEFAULT = "gemini-2.5-flash";
 const MODEL_LITE = "gemini-2.5-flash-lite";
 
+/**
+ * Kill-switch: AI_DISABLED=1 заставляет каждый AI-вызов кидать ошибку,
+ * которая в caller'е должна fallback'нуться на FAQ / static content.
+ * Используется для T1 (утечка ключа) и экономии trial credit.
+ */
+export class AiDisabledError extends Error {
+  constructor() {
+    super("AI is disabled via AI_DISABLED=1 env flag");
+    this.name = "AiDisabledError";
+  }
+}
+
 function getClient(): GoogleGenerativeAI {
+  if (process.env.AI_DISABLED === "1") {
+    throw new AiDisabledError();
+  }
   if (!genAI) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
