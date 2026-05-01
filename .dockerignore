@@ -1,0 +1,7 @@
+node_modules
+.next
+.git
+docs/Text
+public/uploads/books
+.env*
+*.log

@@ -1,36 +1,78 @@
 # Contributing
 
-## Development Setup
+## Окружение
 
 ```bash
 npm install
-cp .env.example .env
-docker compose up db -d  # Start PostgreSQL only
-npm run dev
+cp .env.example .env             # минимум: GEMINI_API_KEY, NEXTAUTH_SECRET
+docker compose up db -d          # только Postgres
+# Прогнать миграции 002–009 (см. DEPLOYMENT.md)
+npm run dev                      # http://localhost:3000
 ```
 
-## Code Standards
+## Стандарты кода
 
-- TypeScript strict mode
-- Components: Server by default, `"use client"` only when needed
-- Translations: Add to both `src/messages/ru.json` and `src/messages/kk.json`
-- Styling: Tailwind CSS utility classes, use `cn()` for conditionals
-- Database: Use `src/lib/db.ts` helpers (query, getOne, getMany)
+- **TypeScript strict.** Интерфейсы для всех props.
+- **Server Components by default.** `"use client"` только при
+  необходимости (формы, чат, читалка, графики).
+- **i18n.** Любые тексты — через `t(messages, "key")`. Добавлять в
+  `src/messages/ru.json` **и** `src/messages/kk.json` одновременно.
+- **Tailwind** + `cn()` (`src/lib/utils.ts`).
+- **БД-вызовы** — только через `src/lib/db.ts` (`query` / `getOne` / `getMany`).
+- **Картинки** — `next/image`, не `<img>`.
 
-## Adding a New Page
+## Новая страница
 
-1. Create page file in `src/app/[locale]/(public)/your-page/page.tsx`
-2. Add translations to both message files
-3. Add navigation link to Header.tsx if needed
+1. `src/app/[locale]/(public)/<page>/page.tsx`.
+2. Тексты в `src/messages/{ru,kk}.json`.
+3. Линк в `Header.tsx` (если публичный) или `AdminSidebar.tsx`.
 
-## Adding a New API Route
+## Новый API-роут
 
-1. Create `route.ts` in `src/app/api/your-endpoint/`
-2. Use standard Next.js Request/Response
-3. Add documentation to `docs/API.md`
+1. `src/app/api/<endpoint>/route.ts`.
+2. **Защита:** `enforceRateLimit` + (если мутация) `requireStaff` /
+   `requireAdmin` + Zod-валидатор (`src/lib/validate.ts`).
+3. Документировать в [`docs/API.md`](API.md).
 
-## AI Features
+## Новая миграция
 
-- All AI calls go through `src/lib/gemini.ts`
-- Always check `isWithinTokenLimit()` before AI calls
-- Provide fallback behavior when AI is unavailable
+1. `sql/0NN_<name>.sql`. Идемпотентно (`IF NOT EXISTS`, `ON CONFLICT`).
+2. Описать в [`docs/DATABASE.md`](DATABASE.md) → таблица миграций.
+3. Прогнать локально: `docker compose exec -T db psql -U postgres -d smart_kids_library < sql/0NN_*.sql`.
+
+## AI-фичи
+
+- Все вызовы — через `src/lib/gemini.ts` с `trackTokenUsage`.
+- Перед AI-вызовом проверить `isWithinTokenLimit()`; при `false` — fallback.
+- Любой генерируемый детский контент пропускать через `moderation_items`.
+
+## Импорт фонда (Өлкетану / Краеведение)
+
+Происходит CLI-скриптами:
+
+```bash
+npm run books:import     # docs/Text/ → public/uploads/books/ + JSON
+npm run books:insert     # JSON → Postgres (UPSERT по original_filename)
+npm run books:enrich     # Pass 1: pdf-parse + mammoth → реальные заголовки
+```
+
+Pass 2 (Claude/Gemini для RU↔KK перевода и topics) — ещё не реализован.
+
+## Conventional Commits на русском
+
+Принят формат `тип(скоуп): описание`, например:
+
+- `feat(catalog): добавить раздел Краеведение`
+- `fix(api): валидация bookId в /api/catalog/progress`
+- `docs(database): миграция 008`
+- `chore(deps): обновить mammoth до 1.12`
+- `refactor(proxy): admin-gate cookie-check`
+
+Не использовать `--no-verify` без согласования.
+
+## Безопасность
+
+- Не коммитить `.env*`.
+- Не использовать `<img>`, `dangerouslySetInnerHTML` без необходимости.
+- Не вытаскивать `req.body` без валидации.
+- `git remote` — без токенов в URL (push через `gh` или SSH).

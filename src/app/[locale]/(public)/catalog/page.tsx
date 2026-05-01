@@ -9,22 +9,28 @@ import { getMany } from "@/lib/db";
 interface BookRow {
   id: number;
   title: string;
+  title_ru: string | null;
+  title_kk: string | null;
   author: string | null;
   cover_url: string | null;
   genre: string | null;
   age_category: string | null;
+  category: string | null;
+  category_kk: string | null;
+  language: string | null;
   is_available: boolean;
 }
 
 const AGES = ["6-9", "10-13", "14-17"] as const;
 type AgeFilter = typeof AGES[number] | "all";
+type Section = "all" | "lore";
 
 export default async function CatalogPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ age?: string }>;
+  searchParams?: Promise<{ age?: string; section?: string }>;
 }) {
   const { locale } = await params;
   const sp = (await searchParams) || {};
@@ -37,17 +43,37 @@ export default async function CatalogPage({
   const requested = (sp.age || cookieAge || "all") as AgeFilter;
   const age: AgeFilter = (AGES as readonly string[]).includes(requested) ? (requested as AgeFilter) : "all";
 
+  const section: Section = sp.section === "lore" ? "lore" : "all";
+
   let books: BookRow[] = [];
+  let total = 0;
   try {
-    const where = age === "all" ? "" : "WHERE age_category = $1";
-    const params: unknown[] = age === "all" ? [] : [age];
+    const conds: string[] = [];
+    const params: unknown[] = [];
+    if (section === "lore") {
+      conds.push(`(category ILIKE 'Краеведение%' OR category_kk ILIKE 'Өлкетану%')`);
+    }
+    if (age !== "all") {
+      params.push(age);
+      conds.push(`age_category = $${params.length}`);
+    }
+    const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
+    const limit = section === "lore" ? 60 : 36;
     books = await getMany<BookRow>(
-      `SELECT id, title, author, cover_url, genre, age_category, is_available
+      `SELECT id, title, title_ru, title_kk, author, cover_url, genre, age_category,
+              category, category_kk, language, is_available
        FROM books ${where}
        ORDER BY created_at DESC
-       LIMIT 36`,
+       LIMIT ${limit}`,
       params
     );
+    if (section === "lore") {
+      const countRow = await getMany<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM books ${where}`,
+        params
+      );
+      total = parseInt(countRow[0]?.count ?? "0", 10);
+    }
   } catch {
     /* ignore */
   }
@@ -75,55 +101,111 @@ export default async function CatalogPage({
         <SmartSearch locale={validLocale} />
       </div>
 
-      {/* Возрастные фильтры */}
-      <div className="flex flex-wrap items-center gap-2 mb-8">
+      {/* Разделы фонда */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="text-xs uppercase tracking-widest" style={{ color: "var(--foreground-muted)" }}>
-          {kk ? "Жасы:" : "Возраст:"}
+          {kk ? "Бөлім:" : "Раздел:"}
         </span>
-        {(["all", ...AGES] as const).map((a) => {
-          const active = age === a;
-          const href = `/${validLocale}/catalog${a === "all" ? "" : `?age=${a}`}`;
+        {(["all", "lore"] as const).map((s) => {
+          const active = section === s;
+          const qs = new URLSearchParams();
+          if (s === "lore") qs.set("section", "lore");
+          if (age !== "all") qs.set("age", age);
+          const href = `/${validLocale}/catalog${qs.toString() ? `?${qs}` : ""}`;
+          const label =
+            s === "all"
+              ? kk
+                ? "Барлық қор"
+                : "Весь фонд"
+              : kk
+              ? "Өлкетану"
+              : "Краеведение";
           return (
             <Link
-              key={a}
+              key={s}
               href={href}
               className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all"
               style={{
-                background: active ? "var(--primary)" : "var(--muted)",
+                background: active ? "var(--accent, var(--primary))" : "var(--muted)",
                 color: active ? "white" : "var(--foreground)",
                 border: "1px solid var(--border)",
               }}
             >
-              {ageLabels[a]}
+              {label}
             </Link>
           );
         })}
       </div>
 
+      {/* Возрастные фильтры (для не-краеведческого раздела) */}
+      {section !== "lore" && (
+        <div className="flex flex-wrap items-center gap-2 mb-8">
+          <span className="text-xs uppercase tracking-widest" style={{ color: "var(--foreground-muted)" }}>
+            {kk ? "Жасы:" : "Возраст:"}
+          </span>
+          {(["all", ...AGES] as const).map((a) => {
+            const active = age === a;
+            const href = `/${validLocale}/catalog${a === "all" ? "" : `?age=${a}`}`;
+            return (
+              <Link
+                key={a}
+                href={href}
+                className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all"
+                style={{
+                  background: active ? "var(--primary)" : "var(--muted)",
+                  color: active ? "white" : "var(--foreground)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                {ageLabels[a]}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
       {books.length === 0 ? (
         <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
-          {kk ? "Бұл жасқа сай кітаптар табылмады." : "Книг для этого возраста пока нет."}
+          {section === "lore"
+            ? kk
+              ? "Өлкетану қоры әлі толтырылмаған."
+              : "Краеведческий фонд пока пуст."
+            : kk
+            ? "Бұл жасқа сай кітаптар табылмады."
+            : "Книг для этого возраста пока нет."}
         </p>
       ) : (
         <section className="mb-12">
           <div className="section-eyebrow mb-4 flex items-center gap-3">
             <span className="inline-block w-8 h-px bg-current" aria-hidden />
-            {age === "all" ? (kk ? "Жинақтан" : "Из коллекции") : `${ageLabels[age]} · ${books.length} ${kk ? "кітап" : "книг"}`}
+            {section === "lore"
+              ? `${kk ? "Өлкетану" : "Краеведение"} · ${total || books.length} ${kk ? "материал" : "материалов"}`
+              : age === "all"
+              ? kk
+                ? "Жинақтан"
+                : "Из коллекции"
+              : `${ageLabels[age]} · ${books.length} ${kk ? "кітап" : "книг"}`}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-7">
-            {books.map((b) => (
-              <BookCard
-                key={b.id}
-                id={b.id}
-                title={b.title}
-                author={b.author ?? ""}
-                coverUrl={b.cover_url ?? undefined}
-                genre={b.genre ?? undefined}
-                ageCategory={b.age_category ?? undefined}
-                isAvailable={b.is_available}
-                locale={validLocale}
-              />
-            ))}
+            {books.map((b) => {
+              const localizedTitle =
+                kk
+                  ? b.title_kk || b.title_ru || b.title
+                  : b.title_ru || b.title_kk || b.title;
+              return (
+                <BookCard
+                  key={b.id}
+                  id={b.id}
+                  title={localizedTitle}
+                  author={b.author ?? ""}
+                  coverUrl={b.cover_url ?? undefined}
+                  genre={b.genre ?? (section === "lore" ? (kk ? b.category_kk ?? undefined : b.category ?? undefined) : undefined)}
+                  ageCategory={b.age_category ?? undefined}
+                  isAvailable={b.is_available}
+                  locale={validLocale}
+                />
+              );
+            })}
           </div>
         </section>
       )}

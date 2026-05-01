@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { formatDate } from "@/lib/utils";
 
 interface NewsCardProps {
@@ -29,8 +30,13 @@ export default function NewsCard({ slug, title, excerpt, imageUrl, category, pub
           style={{ backgroundColor: "var(--muted)" }}
         >
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+            <Image
+              src={imageUrl}
+              alt={title}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            />
           ) : (
             <div
               className="w-full h-full flex items-end p-5"

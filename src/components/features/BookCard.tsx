@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 
@@ -73,12 +74,12 @@ export default function BookCard({
           className="aspect-[3/4] relative overflow-hidden"
           style={{ backgroundColor: "var(--muted)" }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={finalCover}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             onError={() => {
               if (!imgFailed) setImgFailed(true);
             }}

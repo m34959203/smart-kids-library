@@ -40,11 +40,32 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // CORS только для /api/*. Origin контролируется через ALLOWED_ORIGINS;
+    // если переменная не задана — использовать NEXT_PUBLIC_APP_URL, иначе same-origin only.
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? APP_URL ?? "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    const corsOrigin = allowedOrigins.length ? allowedOrigins.join(", ") : "";
+
+    const corsHeaders = corsOrigin
+      ? [
+          { key: "Access-Control-Allow-Origin", value: corsOrigin },
+          { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,DELETE,OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+          { key: "Access-Control-Max-Age", value: "86400" },
+          { key: "Vary", value: "Origin" },
+        ]
+      : [];
+
     return [
       {
         source: "/:path*",
         headers: securityHeaders,
       },
+      ...(corsHeaders.length
+        ? [{ source: "/api/:path*", headers: corsHeaders }]
+        : []),
     ];
   },
   async rewrites() {

@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Kids Library — Сатпаев
 
-## Getting Started
+Цифровая экосистема для детско-юношеской библиотеки города Сатпаев (Казахстан).
+Билингвальный (KK/RU) сайт с AI-помощником, каталогом, генератором сказок,
+голосовым взаимодействием, автопостингом в соцсети и админ-панелью CMS.
 
-First, run the development server:
+> **Заказчик:** КГУ «Детско-юношеская библиотека города Сатпаев» (Сәтбаев қ.,
+> Қусайынов к-сі, 31-1).
+> **Аудитория:** дети и подростки 6–17 лет.
+> **Статус:** покрытие ТЗ ~98 % (см. [`NOTES.md §3`](NOTES.md)).
+
+## Быстрый старт
 
 ```bash
+# Зависимости
+npm install
+
+# Локальная разработка (порт 3000)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Полный стек через Docker (app:3003, postgres:5440)
+docker compose up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3003](http://localhost:3003) (Docker) или
+[http://localhost:3000](http://localhost:3000) (npm dev).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Без API-ключей приложение работает в demo-режиме (FAQ-fallback вместо AI).
+Минимальный обязательный ключ — `GEMINI_API_KEY`. Остальные опциональны
+(см. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Технологии
 
-## Learn More
+- **Next.js 16.2.2** (App Router, standalone output) + **React 19** + TypeScript 5
+- **Tailwind 4**, Lucide-иконки
+- **PostgreSQL 16** (миграции 001–009)
+- **Google Gemini** (`@google/genai` 1.50) — chat, RAG, TTS, function-calling
+- **ElevenLabs** — KK TTS fallback
+- **NextAuth 4** (bcrypt + JWT, роли admin/librarian/reader)
+- **next-intl 4** (RU/KK)
 
-To learn more about Next.js, take a look at the following resources:
+## Возможности
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 🔍 **Электронный каталог** на ~1 000 материалов с двухуровневой
+  локализацией (`title_ru` / `title_kk`), фильтрами по возрасту и **разделом
+  «Краеведение / Өлкетану»** (942 оцифрованных материалов о Сатпаев/Улытау).
+- 🤖 **Чат-помощник** (Gemini) c RAG из каталога/событий/новостей, KK/RU
+  автодетектом, эскалацией к библиотекарю, голосовым вводом (Web Speech API).
+- 📚 **Читалка** с прогрессом, закладками, изменением шрифта/темы.
+- 🎓 **Образовательный помощник** на базе школьной программы РК (146 произведений 1–11 кл.).
+- ✨ **Генератор сказок** RU/KK с multi-voice TTS (роли narrator/hero/villain/...).
+- 🧩 **Викторины, мастерская, раскраски** (PDF-экспорт через jspdf).
+- 📅 **Календарь событий** с автопостингом IG/TG (очередь + cron-tick).
+- 🛠 **Админка**: каталог, новости, события, CMS-страницы, меню,
+  база знаний AI, аналитика (`token_usage` + `chatbot_logs` + `visits`),
+  модерация AI-контента, социальные посты.
+- 🏆 **Геймификация**: баллы, достижения, streak, leaderboard.
+- ♿ **WCAG**: skip-link, focus-visible, high-contrast, dyslexic-friendly,
+  prefers-reduced-motion.
+- 🌐 **PWA** (offline shell, sw.js) + полный SEO (sitemap, robots, JSON-LD,
+  OpenGraph, alternates).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Документация
 
-## Deploy on Vercel
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — структура проекта, слои, ключевые решения.
+- [`docs/DATABASE.md`](docs/DATABASE.md) — схема (25 таблиц), миграции, индексы.
+- [`docs/API.md`](docs/API.md) — REST-эндпоинты.
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — деплой, env-переменные, прод-чеклист.
+- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — как контрибьютить.
+- [`NOTES.md`](NOTES.md) — живой журнал решений (источник истины по
+  статусу/договорённостям/рискам).
+- [`AGENTS.md`](AGENTS.md) — заметки для AI-помощников (gotchas Next 16).
+- [`CLAUDE.md`](CLAUDE.md) — справка для Claude Code.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Скрипты NPM
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev               # next dev (3000)
+npm run build             # next build (standalone)
+npm start                 # next start
+npm run lint              # eslint
+
+# Импорт фонда из docs/Text/ (см. NOTES.md)
+npm run books:import      # копирует в public/uploads/books/, пишет books-data.json
+npm run books:insert      # апсёртит в Postgres
+npm run books:enrich      # Pass 1: pdf-parse + mammoth → реальные заголовки
+```
+
+## Лицензия и принадлежность
+
+Код — собственность КГУ «Детско-юношеская библиотека города Сатпаев».
+Содержание раздела «Краеведение» — оцифрованные материалы библиотеки,
+авторские права принадлежат соответствующим авторам/правообладателям.

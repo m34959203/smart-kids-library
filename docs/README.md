@@ -1,45 +1,17 @@
-# Smart Kids Library Satpayev
+# Документация
 
-Digital ecosystem for children's and youth library in Satpayev, Kazakhstan.
+Главный README проекта — [`../README.md`](../README.md).
 
-## Features
+## Файлы
 
-- **Bilingual**: Full Kazakh (KZ) and Russian (RU) support
-- **AI Consultant**: 24/7 digital librarian powered by Google Gemini
-- **Book Catalog**: ~15,000 books with online reading and AI-powered search
-- **Story Generator**: Interactive AI story creation with branching narratives and TTS
-- **Literary Quizzes**: AI-generated quizzes with 3 difficulty levels
-- **Creative Workshop**: AI-assisted creative writing for children
-- **Coloring Pages**: AI-generated SVG coloring pages
-- **Event Calendar**: Color-coded calendar with filtering
-- **Age Navigation**: 3 profiles (6-9, 10-13, 14-17)
-- **Auto-posting**: Telegram and Instagram integration
-- **PWA Support**: Installable as mobile app
+- [ARCHITECTURE.md](ARCHITECTURE.md) — структура, слои, ключевые решения.
+- [API.md](API.md) — REST-эндпоинты.
+- [DATABASE.md](DATABASE.md) — схема БД (25 таблиц), миграции 001–009.
+- [DEPLOYMENT.md](DEPLOYMENT.md) — деплой, env-переменные, прод-чеклист.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — как контрибьютить.
 
-## Quick Start
+## Источник истины по статусу
 
-```bash
-# Install dependencies
-npm install
-
-# Copy environment file
-cp .env.example .env
-
-# Start with Docker (includes PostgreSQL)
-docker compose up
-
-# Or run locally (requires PostgreSQL)
-npm run dev
-```
-
-## Environment Variables
-
-See `.env.example` for all required variables.
-
-## Documentation
-
-- [Architecture](./ARCHITECTURE.md)
-- [API Reference](./API.md)
-- [Database Schema](./DATABASE.md)
-- [Deployment Guide](./DEPLOYMENT.md)
-- [Contributing](./CONTRIBUTING.md)
+[`../NOTES.md`](../NOTES.md) — живой документ проекта (журнал решений,
+покрытие ТЗ, риски, договорённости). Обновляется после каждой существенной
+работы.

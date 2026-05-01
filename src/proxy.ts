@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 const locales = ["ru", "kk"];
 const defaultLocale = "ru";
 
+// Имя cookie у NextAuth (next-auth.session-token; secure-prefix в проде).
+const SESSION_COOKIES = [
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+];
+
 function getLocale(request: NextRequest): string {
   const pathname = request.nextUrl.pathname;
   for (const locale of locales) {
@@ -10,13 +16,21 @@ function getLocale(request: NextRequest): string {
       return locale;
     }
   }
-
   const acceptLang = request.headers.get("Accept-Language") ?? "";
   if (acceptLang.includes("kk")) return "kk";
   return defaultLocale;
 }
 
-export function middleware(request: NextRequest) {
+function isAdminPath(pathname: string): boolean {
+  // /ru/admin, /ru/admin/..., /kk/admin, /kk/admin/...
+  return /^\/(ru|kk)\/admin(\/|$)/.test(pathname);
+}
+
+function hasSessionCookie(request: NextRequest): boolean {
+  return SESSION_COOKIES.some((name) => Boolean(request.cookies.get(name)?.value));
+}
+
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip API, static files, and Next.js internals
@@ -48,9 +62,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(newUrl);
   }
 
+  // Optimistic admin gate — нет session-cookie → сразу на /profile (там login).
+  // Полная проверка роли делается в (admin)/admin/layout.tsx через NextAuth.
+  if (isAdminPath(pathname) && !hasSessionCookie(request)) {
+    const locale = pathname.startsWith("/kk") ? "kk" : "ru";
+    const url = new URL(`/${locale}/profile`, request.url);
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|uploads|favicon.ico|manifest.json|icon|apple-icon|sitemap.xml|robots.txt|sw.js|offline.html).*)"],
+  matcher: [
+    "/((?!_next|api|uploads|favicon.ico|manifest.json|icon|apple-icon|sitemap.xml|robots.txt|sw.js|offline.html).*)",
+  ],
 };

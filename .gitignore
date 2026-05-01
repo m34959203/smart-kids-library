@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# library content (большие файлы — не в git, не в Docker; синхронизация через bind-mount)
+/docs/Text/
+/public/uploads/books/

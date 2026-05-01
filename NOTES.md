@@ -37,7 +37,7 @@
 
 Подробный аудит — см. журнал в §7 (записи 2026-04-19, 2026-04-20, 2026-04-22 P3).
 
-**Итог покрытия: ~99 %** (после P3-батча 2026-04-22; миграция `004_p3_close_gaps.sql`).
+**Итог покрытия: ~98 %** (после факт-проверки 2026-05-01: накачена 003_gamification, расширена school_curriculum 17→146, переход на proxy.ts, hybrid-recommend, next/image, CORS, Pass 1 enrichment 942 краеведческих).
 
 **Сделано полностью:** каталог+читалка+прогресс/закладки, чат-виджет 24/7 с STT/TTS+эскалация, ИИ-поиск, образовательный ИИ (с подключением `school_curriculum` 1-11 кл.), генератор сказок 3 уровней с **multi-voice TTS** (Gemini KK + ElevenLabs RU, роли narrator/hero/villain/child/elder/magic), викторины, творческая мастерская, **раскраски с PDF-экспортом 5 страниц** (jspdf), EventCalendar+UpcomingEventsWidget, автопостинг IG/TG с планировщиком + **«оптимальное время» (TG 12:00 / IG 19:00, TZ Алматы)**, **CMS статичных страниц** (`cms_pages` + `/admin/pages` + `CmsBlock`), **редактор меню** (`menu_items` + `/admin/menu`), **CRUD базы знаний AI + редактор тона/запрещ.тем/system-prompts** (`/admin/knowledge` 2 вкладки), **`/admin/social` с очередью постов и токенами IG/TG в БД** (`/api/admin/social/posts` + `/api/admin/settings`), **PDF-парсер каталога** (`pdf-parse` + Gemini для извлечения метаданных, `/api/admin/pdf-import`), **видео в новостях** (`news.video_url`), **глобальный поиск в Header** (`/api/search/global` + `GlobalSearch.tsx` по books+events+news+sections с автодополнением), **автоопределение языка RU/KK** (`src/lib/lang-detect.ts` по kk-буквам ә/ғ/қ/ң/ө/ұ/ү/һ/і, подключено в `/api/chatbot`, `/api/catalog/search`, `/api/education`, `VoiceAssistant`), **полный голосовой loop** (`VoiceAssistant`: mic → STT → /api/chatbot → /api/stories/tts → автопроигрывание ответа), token-tracker+FAQ fallback, контекстные подсказки, NextAuth роли, полный CRUD catalog/news/events, admin-модерация, admin-аналитика, `/api/translate`, `/api/simplify`, `/api/posters`, age-profile Context, AgeMenu+Breadcrumbs, auto-social хуки, security-baseline, `/api/upload` hardening, SEO, PWA, WCAG, геймификация.
 
@@ -45,7 +45,7 @@
 
 **Отсутствует (чистые ТЗ-пробелы):** интеграции с открытыми каталогами (Kazlib.kz / Elibra.kz / Nabrk.kz) — это внешние API, требуют отдельных договорённостей с правообладателями. Фоновая музыка/звуковые эффекты в озвучке сказок — multi-voice есть, BGM можно добавить как audio-overlay на клиенте после получения музыкальных файлов.
 
-**Тех-долг (не ТЗ):** `src/middleware.ts` → `proxy.ts` (Next 16 deprecated), `<img>` → `next/image` (lint-warnings), in-memory rate-limit (нужен Redis/KV для мульти-инстанс), нет Playwright/smoke-тестов, GA4/Метрика, Lighthouse+axe прогон, `school_curriculum` сейчас 17 строк-сидов — для прода нужно расширить до 200-300 произведений.
+**Тех-долг (не ТЗ):** ~~`src/middleware.ts` → `proxy.ts`~~ ✅ закрыто 2026-05-01, ~~`<img>` → `next/image`~~ ✅, ~~`school_curriculum` 17 строк~~ ✅ расширен до 146; **остаётся:** in-memory rate-limit (нужен Redis/KV для мульти-инстанс), нет Playwright/smoke-тестов, GA4/Метрика, Lighthouse+axe прогон.
 
 ## 4. Деплой (план)
 
@@ -89,6 +89,8 @@
 
 | Дата | Решение / событие | Файлы / PR | Кто |
 |------|-------------------|-----------|-----|
+| 2026-05-01 | **Закрытие 9 пунктов аудита покрытия ТЗ (после факт-проверки 942 БД-строк vs декларация 99%)**: ① накачена `sql/003_gamification.sql` (4 таблицы + 11 seed-achievements) — рантайм-сломанная фича починена; ② `src/middleware.ts` → `src/proxy.ts` (Next 16 deprecated middleware → proxy convention) с **admin-gate** (optimistic redirect на `/profile?next=...` при отсутствии session-cookie); ③ серверный role-gate в `(admin)/admin/layout.tsx` через `requireStaff`+`redirect`; ④ `<img>` → `next/image` в `BookCard`/`NewsCard`/`Avatar` (lint warnings закрыты); ⑤ `/api/recommend` переписан с `ORDER BY RANDOM()` на **hybrid-скоринг** (age+12, lang+6, history-genre+5, history-author+4, recent+3, available+2, +random; исключает дочитанные); ⑥ `sql/009_security_curriculum_cors.sql` — CASCADE на `social_posts`+`news`/`events`, расширение `school_curriculum` 17→**146 произведений** (1–11 кл., RU/KK/мировая литература/краеведение Улытау); ⑦ CORS-заголовки в `next.config.ts` через `ALLOWED_ORIGINS` (по умолчанию `NEXT_PUBLIC_APP_URL`); ⑧ `scripts/enrich-books.js` Pass 1 (pdf-parse + mammoth) — извлечено реальных заголовков/описаний для 113 файлов (PDF/DOCX), fallback «Сканированный материал · {категория}» для 812 (JPG/TIF/.doc); ⑨ smoke-probe 30+ страниц + критичных API подтверждает 200/307. **Реальное покрытие: ~98%** (было заявлено 99%, но фактически 92–94%; разрыв закрыт). Оставшиеся ТЗ-пробелы — внешние блокеры (Kazlib/Elibra/Nabrk API, BGM-треки) или некритичные (in-memory rate-limit, Playwright, GA4, Lighthouse-прогон). | `src/proxy.ts`, `src/app/[locale]/(admin)/admin/layout.tsx`, `src/app/api/recommend/route.ts`, `src/components/features/{BookCard,NewsCard}.tsx`, `src/components/ui/Avatar.tsx`, `next.config.ts`, `sql/009_security_curriculum_cors.sql`, `scripts/enrich-books.js`, `package.json` (+mammoth), `NOTES.md` | claude |
+| 2026-05-01 | **Импорт краеведческого фонда (`Text/Text/`, 966 файлов / ~2 ГБ)**: добавлены `scripts/import-books.js` (walkDir → копия в `public/uploads/books/book_NNNN.ext` + `books-data.json`), `scripts/insert-books.js` (апсёрт в Postgres), `sql/008_extend_books_for_lore.sql` (расширение `books`: `category/category_kk/title_ru/title_kk/file_type/file_size/content_text/is_digital/content_type/original_filename` + GIN-индекс на `content_text` + UPDATE href пункта меню Краеведение). UI: `/catalog?section=lore` с фильтром по категории + локализованные заголовки `title_${locale}`. Bind-mount `./public/uploads/books:/app/public/uploads/books` в `docker-compose.yml`. `.gitignore`+`.dockerignore`: `docs/Text/` и `public/uploads/books/` исключены. Шаблон взят 1-в-1 из `smart-library-cbs`. NPM: `npm run books:import && npm run books:insert`. Меню старого «`/about/local-lore`» теперь редиректит на `/catalog?section=lore`. | `scripts/import-books.js`, `scripts/insert-books.js`, `sql/008_extend_books_for_lore.sql`, `src/app/[locale]/(public)/catalog/page.tsx`, `src/app/[locale]/(public)/about/local-lore/page.tsx`, `docker-compose.yml`, `.gitignore`, `.dockerignore`, `package.json`, `NOTES.md` | claude |
 | 2026-04-22 | **P3-батч закрытия 13 ТЗ-пробелов**: миграция `sql/004_p3_close_gaps.sql` (cms_pages, menu_items, school_curriculum, news.video_url, расширение site_settings); `src/lib/lang-detect.ts` (детект kk по `[әғқңөұүһі]`, подключён в chatbot/catalog-search/education/voice); `GlobalSearch` в Header + `/api/search/global` (books+events+news+sections); `VoiceAssistant` полный voice-loop с авто-TTS; `/api/stories/tts` multi-voice c `[voice:role]`-метками + Gemini KK TTS (`generateSpeechGeminiTTS` через `gemini-3.1-flash-tts-preview`, переиспользован паттерн из til-kural); `/api/admin/pdf-import` (pdf-parse + Gemini-extract); `/api/education` тянет литературу из `school_curriculum`; `ColoringGenerator` 5-pages PDF (jspdf, SVG→canvas→PNG); `news.video_url` end-to-end; `/admin/pages` + `/api/admin/cms` + `CmsBlock` (CMS для about/rules/resources, паттерн из technokod); `/admin/menu` + `/api/admin/menu` (CRUD пунктов меню); `/admin/knowledge` переписан с stub в реальный CRUD + tab «Тон/запрещ.темы/system-prompts» (паттерн из smart-library-cbs); `/admin/social` переписан с stub в реальный (очередь `social_posts` с retry/cancel + токены IG/TG/TZ через `site_settings` + `/api/admin/settings`); `auto-social.ts` поддержка `timing="optimal"` (читает `social_optimal_time_*` из БД). Build: 0 errors. **Покрытие §3 поднято с ~93% до ~99%**. | ~25 файлов, +1390/-200 строк | claude |
 | 2026-04-20 | **Пересчёт покрытия ТЗ**: структурный аудит файлов подтвердил закрытие всех пунктов P0+P1+P2 из записи 2026-04-19. Итог §3 поднят с **~75 %** до **~93 %**. Остающиеся чистые пробелы ТЗ: PDF-парсер каталога, интеграции Kazlib/Elibra/Nabrk, ML-поверх `/api/recommend` (сейчас `ORDER BY RANDOM()`). | `NOTES.md` §3 | claude |
 | 2026-04-19 | **P1-хвосты** после повторного аудита: `AgeMenu` в Header переключает набор ссылок под выбранный age-профиль (fallback на дефолт, если профиль не выбран); `Breadcrumbs` компонент в (public) layout с RU/KK-словарём; `UpcomingEventsWidget` на главной (server component) — 4 ближайших события с обратным отсчётом; `src/lib/auto-social.ts` + хуки в `/api/news` POST/PUT и `/api/events` POST автоматически ставят пост в очередь `social_posts` для TG+IG при публикации (для событий — за 72 часа до старта). Фасетные фильтры (`suggestedFilters`) уже были в `SmartSearch`. Build 0 errors. | 6 файлов | claude |
@@ -128,15 +130,18 @@
 
 ### Открытые хвосты / возможные улучшения
 
-- [ ] Добавить `middleware.ts` → `proxy.ts` (Next 16 deprecated middleware).
-- [ ] Заменить `<img>` на `next/image` в карточках (lint warnings).
-- [ ] PDF-парсер каталога (ТЗ прямо упоминает) — `pdf-parse` + bulk-импорт в `admin/catalog`.
-- [ ] Интеграции с `Kazlib.kz`/`Elibra.kz`/`Nabrk.kz` (открытые API/каталоги) для импорта метаданных книг.
+- [x] ~~`middleware.ts` → `proxy.ts`~~ — закрыто 2026-05-01 (proxy.ts + admin-gate).
+- [x] ~~`<img>` → `next/image`~~ — закрыто 2026-05-01.
+- [x] ~~PDF-парсер каталога~~ — bulk-импорт `scripts/import-books.js` + Pass 1 `scripts/enrich-books.js` (pdf-parse+mammoth).
+- [x] ~~ML-рекомендации (рандом)~~ — заменён на hybrid-scoring (age+lang+history+recency).
+- [x] ~~Расширение `school_curriculum`~~ — 17→146 произведений.
+- [x] ~~Глобальный search-bar~~ — `GlobalSearch` в Header + `/api/search/global`.
+- [x] ~~Admin UI для system-prompts / BLOCKED_PATTERNS~~ — `/admin/knowledge` вкладка «Тон/запрещ.темы».
+- [x] ~~Admin UI для TG/IG токенов~~ — `/admin/social` через `site_settings`.
+- [ ] Интеграции с `Kazlib.kz`/`Elibra.kz`/`Nabrk.kz` — **внешний блокер** (договорённости с правообладателями).
+- [ ] BGM в озвучке сказок — **внешний блокер** (лицензированные треки).
 - [ ] Тесты: хотя бы smoke Playwright на каталог + чат + профиль.
-- [ ] ML-рекомендации (пока `/api/recommend` отдаёт рандом по возрасту).
-- [ ] Глобальный search-bar с autocomplete по каталогу+событиям+новостям (компонент `SearchBar` есть, глобальной интеграции нет).
-- [ ] Admin UI для system-prompts и `BLOCKED_PATTERNS` (сейчас в коде).
-- [ ] Admin UI для ввода TG/IG токенов (сейчас только `.env`).
+- [ ] Pass 2 enrichment (Claude/Gemini) — обогатить 113 извлечённых RU↔KK + topics, генерация обложек для всех 942.
 - [ ] Redis/KV-бэкенд для rate-limit (in-memory не переживёт мульти-инстанс деплой).
 - [ ] GA4/Яндекс.Метрика (сейчас только собственные `visits`).
 - [ ] Lighthouse + axe-core прогон, Core Web Vitals ≤ 3с.

@@ -1,54 +1,104 @@
-# Smart Kids Library Satpayev - Developer Guide
+# Smart Kids Library Satpayev — Developer Guide
 
-## Project Overview
-Digital ecosystem for children's and youth library in Satpayev, Kazakhstan.
-Bilingual (KZ/RU), AI-powered, targeting children 6-17 years old.
+Цифровая экосистема для детско-юношеской библиотеки города Сатпаев (Казахстан).
+Билингвальный (KK/RU), AI, аудитория 6–17.
 
 ## Tech Stack
-- Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 4
-- PostgreSQL 16 for data storage
-- Google Gemini API (free tier) for AI features
-- Web Speech API + ElevenLabs for TTS/STT
 
-## Key Conventions
+- **Next.js 16.2.2** (App Router, standalone) + React 19 + TypeScript 5
+- Tailwind 4, Lucide icons
+- PostgreSQL 16 (миграции 001–009 в `sql/`)
+- Google Gemini (`@google/genai` 1.50) — chat / RAG / TTS / function calling
+- ElevenLabs — KK TTS fallback
+- pdf-parse + mammoth — извлечение текста для каталога
+- NextAuth 4 (bcrypt + JWT, роли `admin/librarian/reader`)
+- next-intl 4 (RU/KK)
 
-### File Structure
-- Pages use `[locale]` dynamic segment for i18n (ru/kk)
-- Public pages under `(public)` route group
-- Admin pages under `(admin)` route group
-- API routes under `src/app/api/`
-- Components: `ui/` (reusable), `layout/` (structural), `features/` (domain)
+## Ключевые конвенции
 
-### Code Style
-- All components use TypeScript with proper interfaces
-- Server components by default; `"use client"` only when needed
-- Use `@/` import alias for all internal imports
-- Use `cn()` utility for conditional class names
-- Use `t()` for translations from message files
+### Структура
+
+- Страницы под `src/app/[locale]/` (locale ∈ `ru` / `kk`).
+- `(public)` — публичные роуты. `(admin)/admin/` — админка с
+  серверным role-gate'ом в `layout.tsx` (`requireStaff`).
+- API под `src/app/api/`.
+- Компоненты: `ui/` (атомы), `layout/` (структура), `features/` (домен).
+- Edge proxy — `src/proxy.ts` (Next 16; `middleware.ts` deprecated).
+  Делает только locale-routing + optimistic admin-gate (cookie-check).
+  Полную авторизацию делает layout, не proxy.
+
+### Code style
+
+- TypeScript строго, интерфейсы для props.
+- Server Components by default; `"use client"` только при необходимости.
+- Импорты через `@/` alias.
+- Tailwind через `cn()` (`src/lib/utils.ts`).
+- Тексты — через `t(messages, "key")` из `src/messages/{ru,kk}.json`.
+- Картинки — **только** `next/image` (`<img>` запрещены lint-warnings уже
+  закрыты).
 
 ### i18n
-- Two locales: `ru` (Russian, default), `kk` (Kazakh)
-- Messages in `src/messages/ru.json` and `src/messages/kk.json`
-- Middleware redirects bare paths to locale-prefixed paths
 
-### AI Integration
-- All AI calls go through `src/lib/gemini.ts`
-- Token tracking via `src/lib/token-tracker.ts`
-- Daily token limit configurable via `GEMINI_DAILY_TOKEN_LIMIT`
-- Graceful degradation to FAQ when limit reached
+- Каскад заголовков в БД: `title_${locale}` → `title_${other}` → `title`.
+- Хелперы в `src/lib/book-i18n.ts` (если появится) или inline в страницах.
+
+### AI
+
+- Все вызовы через `src/lib/gemini.ts` с `trackTokenUsage`.
+- KK TTS = `gemini-3.1-flash-tts-preview` (Gemini); KK Live = `gemini-2.5-flash-native-audio-preview-12-2025`.
+- При исчерпании дневного лимита — graceful fallback на `chatbot_knowledge`.
 
 ### Database
-- Schema in `sql/001_init.sql`
-- Use `src/lib/db.ts` for all DB operations
-- Pool-based connections with query logging in dev
 
-### Content Safety
-- All AI-generated content for children must be moderated
-- Chat system prompt enforces kid-friendly responses
-- Admin moderation page for reviewing AI content
+- Миграции 001–009 идемпотентны (`IF NOT EXISTS` / `ON CONFLICT`).
+- Только 001 запускается автоматически Postgres-контейнером.
+  Остальные — вручную (см. `docs/DEPLOYMENT.md`).
+- Все БД-операции — через `src/lib/db.ts` (pool, query-logging в dev).
+
+### Безопасность
+
+- `/api/upload` — whitelist MIME (jpg/png/webp/svg/gif), ≤ 8 МБ, требует staff.
+- CSP/HSTS/X-Frame-Options в `next.config.ts`.
+- CORS через `ALLOWED_ORIGINS` ENV.
+- Rate-limit per-IP in-memory (`src/lib/rate-limit.ts`).
+- Дефолтный admin **не сидится** в SQL; создаётся через `SEED_ADMIN_*`.
+
+### Контент-модерация
+
+- Весь AI-генерируемый контент для детей проходит через `moderation_items`.
+- Системный промпт чата запрещает темы (см. `/admin/knowledge` вкладка
+  «Тон / запрещ. темы»).
 
 ## Commands
-- `npm run dev` - Development server
-- `npm run build` - Production build
-- `npm run lint` - ESLint
-- `docker compose up` - Full stack with PostgreSQL
+
+```bash
+npm run dev         # next dev (3000)
+npm run build       # standalone build
+npm start
+npm run lint
+docker compose up   # full stack: app:3003, postgres:5440
+
+# Импорт фонда из docs/Text/
+npm run books:import
+npm run books:insert
+npm run books:enrich
+```
+
+## Готовые подсистемы (см. NOTES.md §3 — покрытие ТЗ ~98%)
+
+Каталог + читалка + прогресс / закладки, чат-виджет с STT/TTS + эскалация,
+AI-поиск, образовательный AI (146 произведений в `school_curriculum`),
+генератор сказок 3 уровня с multi-voice TTS, викторины, мастерская,
+раскраски с PDF-экспортом, EventCalendar, автопостинг IG/TG с очередью и
+"оптимальным временем", CMS статичных страниц, редактор меню, CRUD AI
+knowledge, SMM-консоль, PDF-парсер каталога, видео в новостях, глобальный
+поиск с автодополнением, автоопределение языка RU/KK, голосовой loop,
+геймификация (баллы, достижения, streak, leaderboard), CMS, аналитика,
+admin-модерация, hybrid-recommend, age-profile, breadcrumbs, auto-social,
+security-baseline, SEO, PWA, WCAG.
+
+## Чего НЕТ (внешние блокеры)
+
+- Интеграции с Kazlib.kz / Elibra.kz / Nabrk.kz (нужны договорённости с
+  правообладателями).
+- BGM в озвучке сказок (нужны лицензированные треки).
