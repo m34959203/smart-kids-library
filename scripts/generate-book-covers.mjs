@@ -66,10 +66,10 @@ function buildSvgCover({ title, author, ageCategory }) {
   </defs>
   <rect width="${W}" height="${H}" fill="url(#g)"/>
   <rect x="24" y="24" width="${W - 48}" height="${H - 48}" fill="none" stroke="${pal.text}" stroke-opacity="0.35" stroke-width="2"/>
-  <text x="${W/2}" y="80" text-anchor="middle" font-family="Georgia, serif" font-size="14" letter-spacing="6" fill="${pal.text}" fill-opacity="0.7">SMART KIDS LIBRARY</text>
-  ${titleLines.map((line, i) => `<text x="${W/2}" y="${titleStartY + i * 52}" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="44" fill="${pal.text}">${escapeXml(line)}</text>`).join("\n  ")}
-  ${authorLine ? `<text x="${W/2}" y="${H - 90}" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="${pal.text}" fill-opacity="0.85">${authorLine}</text>` : ""}
-  <text x="${W/2}" y="${H - 50}" text-anchor="middle" font-family="Georgia, serif" font-size="13" letter-spacing="3" fill="${pal.text}" fill-opacity="0.6">КРАЕВЕДЕНИЕ • САТПАЕВ</text>
+  <text x="${W/2}" y="80" text-anchor="middle" font-family="DejaVu Serif, Georgia, serif" font-size="14" letter-spacing="6" fill="${pal.text}" fill-opacity="0.7">SMART KIDS LIBRARY</text>
+  ${titleLines.map((line, i) => `<text x="${W/2}" y="${titleStartY + i * 52}" text-anchor="middle" font-family="DejaVu Serif, Georgia, serif" font-weight="700" font-size="44" fill="${pal.text}">${escapeXml(line)}</text>`).join("\n  ")}
+  ${authorLine ? `<text x="${W/2}" y="${H - 90}" text-anchor="middle" font-family="DejaVu Serif, Georgia, serif" font-style="italic" font-size="22" fill="${pal.text}" fill-opacity="0.85">${authorLine}</text>` : ""}
+  <text x="${W/2}" y="${H - 50}" text-anchor="middle" font-family="DejaVu Serif, Georgia, serif" font-size="13" letter-spacing="3" fill="${pal.text}" fill-opacity="0.6">КРАЕВЕДЕНИЕ • САТПАЕВ</text>
 </svg>`;
 }
 

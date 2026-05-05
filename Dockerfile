@@ -21,8 +21,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# poppler-utils даёт pdftoppm для scripts/generate-book-covers.mjs
-RUN apk add --no-cache poppler-utils
+# poppler-utils даёт pdftoppm для scripts/generate-book-covers.mjs.
+# ttf-dejavu + fontconfig нужны librsvg (через sharp) для рендера кириллицы
+# и казахских букв в SVG-обложках — без них librsvg рисует пустые квадраты.
+RUN apk add --no-cache poppler-utils ttf-dejavu fontconfig
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
