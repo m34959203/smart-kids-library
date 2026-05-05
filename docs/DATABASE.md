@@ -77,6 +77,21 @@ language, is_available, file_url, page_count, created_at,
 `title` остаётся для совместимости со старым кодом; UI выбирает локализованный
 заголовок каскадом `title_${locale}` → `title_${other}` → `title`.
 
+### `cover_url` — источники и покрытие
+
+Покрытие 943/943. Источники, выбираются в порядке приоритета:
+
+| Источник | Расположение | Сколько |
+|----------|--------------|--------:|
+| Нативный JPG-скан (тот же файл, что `file_url`) | `/uploads/books/book_NNNN.jpg` | 614 |
+| WebP, рендер первой страницы PDF (`pdftoppm`+sharp) | `/uploads/covers/book_NNNN.webp` | 61 |
+| WebP из TIF (sharp `failOn:'none'`) | `/uploads/covers/book_NNNN.webp` | 135 |
+| Типографический WebP (SVG-градиент по `age_category`) | `/uploads/covers/book_NNNN.webp` | 133 |
+
+Скрипты `npm run covers:tif` и `npm run covers:gen` идемпотентны и трогают
+только записи с пустым `cover_url`. Подробности — `docs/ARCHITECTURE.md`
+(«Поток обложек») и `docs/DEPLOYMENT.md`.
+
 ## Ключевые индексы
 
 - `books`: GIN на `to_tsvector('simple', content_text)` для full-text;

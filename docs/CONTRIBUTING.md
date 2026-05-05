@@ -54,6 +54,18 @@ npm run dev                      # http://localhost:3000
 npm run books:import     # docs/Text/ → public/uploads/books/ + JSON
 npm run books:insert     # JSON → Postgres (UPSERT по original_filename)
 npm run books:enrich     # Pass 1: pdf-parse + mammoth → реальные заголовки
+npm run covers:tif       # 135 TIF → /uploads/covers/*.webp (sharp)
+npm run covers:gen       # PDF → 1-я страница; DOCX/no-file → типографика
+```
+
+После `books:insert` обязательно дополнить SQL для JPG-сканов
+(скрипта-обёртки нет — это разовая операция):
+
+```sql
+UPDATE books SET cover_url = file_url
+ WHERE file_type IN ('jpg','jpeg')
+   AND file_url IS NOT NULL AND file_url <> ''
+   AND (cover_url IS NULL OR cover_url = '');
 ```
 
 Pass 2 (Claude/Gemini для RU↔KK перевода и topics) — ещё не реализован.

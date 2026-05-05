@@ -21,12 +21,19 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# poppler-utils даёт pdftoppm для scripts/generate-book-covers.mjs
+RUN apk add --no-cache poppler-utils
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# bind-mount точки для фонда и обложек должны принадлежать nextjs
+RUN mkdir -p /app/public/uploads/books /app/public/uploads/covers \
+    && chown -R nextjs:nodejs /app/public/uploads
 
 USER nextjs
 

@@ -11,6 +11,7 @@
 - Google Gemini (`@google/genai` 1.50) — chat / RAG / TTS / function calling
 - ElevenLabs — KK TTS fallback
 - pdf-parse + mammoth — извлечение текста для каталога
+- sharp + poppler-utils (`pdftoppm`) — генерация обложек книг
 - NextAuth 4 (bcrypt + JWT, роли `admin/librarian/reader`)
 - next-intl 4 (RU/KK)
 
@@ -82,7 +83,27 @@ docker compose up   # full stack: app:3003, postgres:5440
 npm run books:import
 npm run books:insert
 npm run books:enrich
+
+# Обложки (запускать после books:insert; идемпотентны)
+npm run covers:tif      # 135 TIF-сканов → /uploads/covers/*.webp
+npm run covers:gen      # PDF → 1-я страница, DOCX/no-file → типографика
 ```
+
+### Обложки книг
+
+- Источники `cover_url`:
+  1. JPG-сканы — путь `file_url` ставится напрямую как `cover_url`
+     (612 шт., делается одноразовым SQL после `books:insert`).
+  2. TIF-сканы — Sharp конвертирует в WebP в `/uploads/covers/`
+     (`scripts/convert-tif-covers.mjs`).
+  3. PDF — `pdftoppm` рендерит 1-ю страницу → Sharp ужимает до WebP
+     (`scripts/generate-book-covers.mjs`).
+  4. DOCX/`no-file` — типографический SVG (заголовок + автор на градиенте
+     по `age_category`) → Sharp WebP.
+- Целевая папка `public/uploads/covers/` — bind-mount в docker-compose,
+  не в git и не в Docker-image (как и `books/`).
+- Скрипты безопасны при повторном запуске: трогают только записи
+  с пустым `cover_url`.
 
 ## Готовые подсистемы (см. NOTES.md §3 — покрытие ТЗ ~98%)
 
@@ -95,7 +116,8 @@ knowledge, SMM-консоль, PDF-парсер каталога, видео в 
 поиск с автодополнением, автоопределение языка RU/KK, голосовой loop,
 геймификация (баллы, достижения, streak, leaderboard), CMS, аналитика,
 admin-модерация, hybrid-recommend, age-profile, breadcrumbs, auto-social,
-security-baseline, SEO, PWA, WCAG.
+security-baseline, SEO, PWA, WCAG, **полное покрытие обложек 943/943**
+(JPG-сканы / TIF→WebP / PDF-первая-страница / типографика).
 
 ## Чего НЕТ (внешние блокеры)
 

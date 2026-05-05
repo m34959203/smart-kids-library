@@ -31,15 +31,31 @@ done
 ```bash
 # 1. Положить оригиналы в docs/Text/  (не в git!)
 #    Пример структуры: docs/Text/2022 ж оцифр/Казак оцифровка/*.docx
-# 2. Импорт + апсёрт
+# 2. Импорт + апсёрт + текстовое обогащение
 npm run books:import      # копия в public/uploads/books + JSON
 npm run books:insert      # апсёрт в БД (DATABASE_URL)
 npm run books:enrich      # Pass 1: pdf-parse + mammoth
+# 3. Обложки (после books:insert; идемпотентны)
+npm run covers:tif        # 135 TIF → /uploads/covers/*.webp (sharp)
+npm run covers:gen        # PDF → 1-я страница; DOCX/no-file → типографика
 ```
 
-В `docker-compose.yml` уже подключён bind-mount
-`./public/uploads/books:/app/public/uploads/books`, поэтому файлы видны
+В `docker-compose.yml` уже подключены bind-mount'ы
+`./public/uploads/books:/app/public/uploads/books` и
+`./public/uploads/covers:/app/public/uploads/covers`, поэтому файлы видны
 контейнеру сразу без ребилда.
+
+> Для JPG-сканов отдельный скрипт не нужен: `scripts/insert-books.js` уже
+> кладёт `file_url=/uploads/books/...jpg`, и одноразовый SQL прописал
+> `cover_url := file_url` для всех 614 JPG. При новом импорте JPG
+> повторите тот же UPDATE:
+>
+> ```sql
+> UPDATE books SET cover_url = file_url
+>  WHERE file_type IN ('jpg','jpeg')
+>    AND file_url IS NOT NULL AND file_url <> ''
+>    AND (cover_url IS NULL OR cover_url = '');
+> ```
 
 ## Manual deployment (без Docker)
 
@@ -93,10 +109,13 @@ node .next/standalone/server.js
 7. ✅ Все `NEXT_PUBLIC_APP_URL` и `NEXTAUTH_URL` — на боевой домен.
 8. ✅ Rate-limit включён, CSP заголовки заданы (см. `next.config.ts`).
 9. ✅ Прогнаны все миграции `sql/00*.sql`.
-10. ✅ Bind-mount `public/uploads/books/` подключён, права на запись.
-11. ✅ В nginx/traefik отдаётся `/uploads/books/*` напрямую (мимо Node)
-    для производительности.
-12. ⚠ Прогон Lighthouse + axe-core, фикс CWV ≤ 3 с (TBD).
+10. ✅ Bind-mount `public/uploads/books/` и `public/uploads/covers/`
+    подключены, права на запись (uid app-юзера, **не root**; см. gotcha ниже).
+11. ✅ В nginx/traefik отдаётся `/uploads/books/*` и `/uploads/covers/*`
+    напрямую (мимо Node) для производительности.
+12. ✅ В контейнере установлен `poppler-utils` (для `pdftoppm`); Dockerfile
+    добавляет `apk add --no-cache poppler-utils` в alpine-образ.
+13. ⚠ Прогон Lighthouse + axe-core, фикс CWV ≤ 3 с (TBD).
 
 ## Где может стрельнуть
 
@@ -115,3 +134,17 @@ node .next/standalone/server.js
 - **Pass 1 enrichment.** Запускать **после** `books:insert`. Перед запуском
   убедиться, что `DATABASE_URL` указывает туда же, куда писал
   `insert-books.js`.
+- **`covers:tif` падает с EACCES.** Свежесмонтированный bind-mount
+  `/app/public/uploads/covers` принадлежит host-юзеру, а app-контейнер
+  работает под `nextjs:nogroup` (uid 1001). Разово исправить:
+  `docker compose exec --user root app sh -c "chown -R 1001:65533 /app/public/uploads/covers && chmod 775 /app/public/uploads/covers"`.
+  В долгосрочной перспективе — добавить инициализацию в Dockerfile/entrypoint.
+- **`covers:tif` падает с "Invalid TIFF directory".** Sharp по умолчанию
+  трактует libtiff-warnings как ошибки. В скрипте уже выставлен
+  `failOn: "none"`, не убирать.
+- **`covers:gen` падает на PDF без `pdftoppm`.** Установить poppler-utils:
+  `apk add --no-cache poppler-utils` (alpine) / `apt-get install -y poppler-utils` (debian).
+- **Регенерация обложек.** Скрипты не перезатирают непустой `cover_url`.
+  Чтобы пересоздать всё, сначала очистить:
+  `UPDATE books SET cover_url = NULL` (опасно для прод, делать в окне
+  обслуживания) или таргетировать конкретные ID.

@@ -9,7 +9,9 @@
     "lint": "eslint",
     "books:import": "node scripts/import-books.js",
     "books:insert": "node scripts/insert-books.js",
-    "books:enrich": "node scripts/enrich-books.js"
+    "books:enrich": "node scripts/enrich-books.js",
+    "covers:tif": "node scripts/convert-tif-covers.mjs",
+    "covers:gen": "node scripts/generate-book-covers.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",

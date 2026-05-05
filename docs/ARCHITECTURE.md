@@ -11,6 +11,7 @@
 - **Google Gemini** (`@google/genai`) — chat/RAG/TTS/function calling
 - **ElevenLabs** — KK TTS fallback
 - **pdf-parse**, **mammoth** — извлечение текста для каталога
+- **sharp** + **poppler-utils** (`pdftoppm`) — генерация обложек книг
 
 ## Слои
 
@@ -55,6 +56,7 @@ PostgreSQL              Внешние сервисы
 | `scripts/` | CLI: импорт каталога, обогащение, утилиты |
 | `docs/` | документация |
 | `public/uploads/books/` | bind-mount том (не в git, не в Docker-image) — фонд каталога |
+| `public/uploads/covers/` | bind-mount том (не в git, не в Docker-image) — сгенерированные WebP-обложки |
 | `docs/Text/` | оригиналы файлов фонда (не в git, не в Docker-image) |
 
 ## Ключевые архитектурные решения
@@ -71,9 +73,10 @@ PostgreSQL              Внешние сервисы
    (`chatbot_knowledge`). Алерты 80%/95% в админ-аналитике.
 4. **i18n заголовков.** UI выбирает каскадом
    `title_${locale}` → `title_${other}` → `title`. То же для description.
-5. **Фонд = не в репо.** `docs/Text/` (оригиналы, ~2 ГБ) и
-   `public/uploads/books/` (sanitized копии) исключены из git и Docker-image.
-   В контейнер монтируются как bind-mount (`docker-compose.yml`).
+5. **Фонд = не в репо.** `docs/Text/` (оригиналы, ~2 ГБ),
+   `public/uploads/books/` (sanitized копии) и
+   `public/uploads/covers/` (сгенерированные обложки) исключены из git и
+   Docker-image. В контейнер монтируются как bind-mount (`docker-compose.yml`).
 6. **Hybrid-рекомендации без ML.** SQL-скоринг в `/api/recommend`
    (age + language + reading_progress.history + recency + random).
 7. **PWA + SEO с первого дня.** `sitemap.ts`/`robots.ts`/`opengraph-image.tsx`
@@ -105,6 +108,36 @@ title_ru/title_kk + description_ru/description_kk
               ▼
 UI: /catalog?section=lore (фильтр по category ILIKE 'Краеведение%')
 ```
+
+## Поток обложек (cover_url)
+
+После импорта BookCard ожидает `cover_url`. Без него рендерится один из 8
+fallback-плейсхолдеров (`public/covers/cover-0N.jpg`) с накладным заголовком —
+визуально однообразно. Поэтому генерация обложек идёт после импорта:
+
+```
+books (cover_url IS NULL)
+        │
+        ├── file_type IN ('jpg','jpeg')
+        │     → SQL UPDATE: cover_url := file_url     (614 шт., разовый)
+        │
+        ├── file_type = 'tif'
+        │     → scripts/convert-tif-covers.mjs:
+        │       Sharp({failOn:'none'}) → WebP в /uploads/covers/  (135 шт.)
+        │
+        ├── file_type = 'pdf'
+        │     → scripts/generate-book-covers.mjs:
+        │       pdftoppm -f 1 -l 1 -r 110 → JPG → Sharp → WebP    (61 шт.)
+        │
+        └── file_type IN ('docx','doc') ИЛИ NULL
+              → scripts/generate-book-covers.mjs:
+                буфер SVG (заголовок+автор на градиенте по age_category)
+                → Sharp WebP                                        (133 шт.)
+```
+
+Скрипты идемпотентны: трогают только записи с пустым `cover_url`. Палитра
+SVG — три профиля: 6–9 (тёплый), 10–13 (бирюзовый), 14–17 (фиолетовый),
+fallback (коричневый).
 
 ## Изменения, важные для разработчика Next 16
 
