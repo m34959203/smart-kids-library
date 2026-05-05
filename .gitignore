@@ -42,5 +42,10 @@ next-env.d.ts
 
 # library content (большие файлы — не в git, не в Docker; синхронизация через bind-mount)
 /docs/Text/
+/Text/
 /public/uploads/books/
 /public/uploads/covers/
+
+# Windows / Office мусор
+Thumbs.db
+~$*
