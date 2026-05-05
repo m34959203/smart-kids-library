@@ -20,6 +20,7 @@ services:
         condition: service_healthy
     volumes:
       - ./public/uploads/books:/app/public/uploads/books
+      - ./public/uploads/covers:/app/public/uploads/covers
       - ./scripts/books-data.json:/app/scripts/books-data.json:ro
     restart: unless-stopped
 
