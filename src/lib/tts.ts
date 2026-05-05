@@ -3,7 +3,13 @@
  * KK: Gemini gemini-3.1-flash-tts-preview (поддерживает 70+ языков, включая kk-KZ).
  * RU: Google TTS Wavenet → fallback ElevenLabs.
  * Voice mapping: ABSTRACT → конкретный voice id для конкретного провайдера.
+ *
+ * Кэш: L1 in-memory (Map) + L2 persistent (sql/011_tts_cache.sql).
+ * Одна и та же фраза + voice + model → готовый WAV из БД, никаких
+ * Gemini/ElevenLabs round-trip и квот не тратится.
  */
+import { createHash } from "node:crypto";
+import { query, getOne } from "./db";
 
 export interface TTSOptions {
   text: string;
@@ -42,6 +48,45 @@ export function pickVoice(role: VoiceRole | string | undefined, provider: "gemin
 }
 
 const ttsCache = new Map<string, ArrayBuffer>();
+const MEM_CACHE_MAX = 200;
+
+function ttsCacheKey(provider: string, model: string, voice: string, text: string): string {
+  return createHash("sha256").update(`${provider}::${model}::${voice}::${text}`).digest("hex");
+}
+
+async function lookupPersistentCache(key: string): Promise<ArrayBuffer | null> {
+  try {
+    const row = await getOne<{ audio_base64: string }>(
+      `UPDATE tts_cache SET hits = hits + 1, last_hit_at = NOW()
+       WHERE cache_key = $1
+       RETURNING audio_base64`,
+      [key]
+    );
+    if (!row?.audio_base64) return null;
+    const buf = Buffer.from(row.audio_base64, "base64");
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+  } catch (err) {
+    console.warn("[tts] persistent cache lookup failed:", err);
+    return null;
+  }
+}
+
+async function storePersistentCache(
+  key: string, provider: string, model: string, voice: string,
+  text: string, audio: ArrayBuffer, mime: string
+): Promise<void> {
+  try {
+    await query(
+      `INSERT INTO tts_cache (cache_key, provider, model, voice, text_preview, audio_base64, mime_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (cache_key) DO NOTHING`,
+      [key, provider, model, voice, text.slice(0, 160),
+       Buffer.from(audio).toString("base64"), mime]
+    );
+  } catch (err) {
+    console.warn("[tts] persistent cache insert failed:", err);
+  }
+}
 
 // 16-bit PCM → WAV-обёртка (Gemini возвращает raw PCM)
 function pcmToWav(pcm: Uint8Array, sampleRate = 24000, channels = 1, bitsPerSample = 16): ArrayBuffer {
@@ -76,11 +121,17 @@ function parseSampleRate(mime: string, fallback = 24000): number {
 export async function generateSpeechGeminiTTS(text: string, voice = "Aoede"): Promise<ArrayBuffer | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || !text?.trim()) return null;
-  const cacheKey = `gemini:${voice}:${text}`;
-  const cached = ttsCache.get(cacheKey);
-  if (cached) return cached;
-
   const model = process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview";
+  const memKey = `gemini:${voice}:${text}`;
+  const cached = ttsCache.get(memKey);
+  if (cached) return cached;
+  const persistKey = ttsCacheKey("gemini", model, voice, text);
+  const persisted = await lookupPersistentCache(persistKey);
+  if (persisted) {
+    if (ttsCache.size >= MEM_CACHE_MAX) ttsCache.clear();
+    ttsCache.set(memKey, persisted);
+    return persisted;
+  }
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -103,7 +154,9 @@ export async function generateSpeechGeminiTTS(text: string, voice = "Aoede"): Pr
     const mime = part.mimeType || "audio/L16;rate=24000";
     const pcm = Uint8Array.from(atob(part.data), (c) => c.charCodeAt(0));
     const wav = pcmToWav(pcm, parseSampleRate(mime));
-    ttsCache.set(cacheKey, wav);
+    if (ttsCache.size >= MEM_CACHE_MAX) ttsCache.clear();
+    ttsCache.set(memKey, wav);
+    await storePersistentCache(persistKey, "gemini", model, voice, text, wav, "audio/wav");
     return wav;
   } catch {
     return null;

@@ -1,5 +1,9 @@
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 import { trackTokenUsage } from "./token-tracker";
+import { assertQuota } from "./ai-quota";
+import { logGeneration } from "./ai-log";
+
+export { QuotaExceededError, userKeyFromRequest, assertUserQuota } from "./ai-quota";
 
 let genAI: GoogleGenerativeAI | null = null;
 
@@ -53,6 +57,7 @@ export async function generateText(
   }
 ): Promise<GeminiResponse> {
   const modelName = options?.model ?? MODEL_DEFAULT;
+  await assertQuota(modelName);
   const model = getModel(modelName);
 
   const parts = [];
@@ -62,6 +67,7 @@ export async function generateText(
     parts.push({ text: prompt });
   }
 
+  const startedAt = Date.now();
   const result = await model.generateContent({
     contents: [{ role: "user", parts }],
     generationConfig: {
@@ -72,9 +78,19 @@ export async function generateText(
 
   const response = result.response;
   const text = response.text();
-  const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+  const usage = response.usageMetadata;
+  const promptTokens = usage?.promptTokenCount ?? 0;
+  const completionTokens = usage?.candidatesTokenCount ?? 0;
+  const tokensUsed = usage?.totalTokenCount ?? promptTokens + completionTokens;
+  const durationMs = Date.now() - startedAt;
 
   await trackTokenUsage(tokensUsed, modelName, options?.endpoint ?? "general");
+  await logGeneration({
+    provider: "gemini",
+    model: modelName,
+    purpose: options?.endpoint ?? "general",
+    promptTokens, completionTokens, durationMs,
+  });
 
   return { text, tokensUsed };
 }
@@ -88,6 +104,7 @@ export async function generateChat(
   endpoint?: string
 ): Promise<GeminiResponse> {
   const modelName = MODEL_LITE;
+  await assertQuota(modelName);
   const model = getModel(modelName);
 
   const history = messages.slice(0, -1).map((m) => ({
@@ -106,13 +123,24 @@ export async function generateChat(
     },
   });
 
+  const startedAt = Date.now();
   const lastMessage = messages[messages.length - 1];
   const result = await chat.sendMessage(lastMessage.content);
   const response = result.response;
   const text = response.text();
-  const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+  const usage = response.usageMetadata;
+  const promptTokens = usage?.promptTokenCount ?? 0;
+  const completionTokens = usage?.candidatesTokenCount ?? 0;
+  const tokensUsed = usage?.totalTokenCount ?? promptTokens + completionTokens;
+  const durationMs = Date.now() - startedAt;
 
   await trackTokenUsage(tokensUsed, modelName, endpoint ?? "chat");
+  await logGeneration({
+    provider: "gemini",
+    model: modelName,
+    purpose: endpoint ?? "chat",
+    promptTokens, completionTokens, durationMs,
+  });
 
   return { text, tokensUsed };
 }
@@ -126,9 +154,11 @@ export async function generateJSON<T = unknown>(
   systemPrompt?: string
 ): Promise<{ data: T; tokensUsed: number }> {
   const modelName = MODEL_DEFAULT;
+  await assertQuota(modelName);
   const model = getModel(modelName);
 
   const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+  const startedAt = Date.now();
 
   const attempt = async (extraStrict: boolean) => {
     const result = await model.generateContent({
@@ -165,10 +195,18 @@ export async function generateJSON<T = unknown>(
     data = tryParse(raw);
     if (data === null) {
       await trackTokenUsage(tokensUsed, modelName, "json-failed");
+      await logGeneration({
+        provider: "gemini", model: modelName, purpose: "json-failed",
+        promptTokens: 0, completionTokens: tokensUsed, durationMs: Date.now() - startedAt,
+      });
       throw new Error(`Gemini JSON parse failed: ${raw.slice(0, 200)}`);
     }
   }
 
   await trackTokenUsage(tokensUsed, modelName, "json");
+  await logGeneration({
+    provider: "gemini", model: modelName, purpose: "json",
+    promptTokens: 0, completionTokens: tokensUsed, durationMs: Date.now() - startedAt,
+  });
   return { data, tokensUsed };
 }
