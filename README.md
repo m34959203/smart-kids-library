@@ -1,78 +1,114 @@
 # Smart Kids Library — Сатпаев
 
-Цифровая экосистема для детско-юношеской библиотеки города Сатпаев (Казахстан).
-Билингвальный (KK/RU) сайт с AI-помощником, каталогом, генератором сказок,
-голосовым взаимодействием, автопостингом в соцсети и админ-панелью CMS.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Stack](https://img.shields.io/badge/stack-Next.js%2016%20·%20Postgres%20·%20Groq%20·%20Gemini-black)]()
+[![Lang](https://img.shields.io/badge/lang-RU%20·%20KK-orange)]()
+[![Status](https://img.shields.io/badge/status-production--ready-green)]()
 
-> **Заказчик:** КГУ «Детско-юношеская библиотека города Сатпаев» (Сәтбаев қ.,
-> Қусайынов к-сі, 31-1).
-> **Аудитория:** дети и подростки 6–17 лет.
-> **Статус:** покрытие ТЗ ~98 % (см. [`NOTES.md §3`](NOTES.md)).
+> Цифровая экосистема Детско-юношеской библиотеки города Сәтбаев: AI-помощник, билингвальный каталог 943 материалов, голосовой диалог, генератор сказок и автопостинг в соцсети.
 
-## Быстрый старт
+## Проблема
 
-```bash
-# Зависимости
-npm install
+Областная детская библиотека хочет онлайн-витрину уровня современного EdTech-сервиса, а не просто страницу с режимом работы. Но команда — 2 библиотекаря, бюджета на разработку нет, нет домена, нет email-инфраструктуры. У читателей дома часто нет компьютера, заходят с телефонов родителей. Каталог — 943 краеведческих материала о Сатпаев/Улытау в виде PDF/DOCX/JPG-сканов, метаданных нет.
 
-# Локальная разработка (порт 3000)
-npm run dev
+## Решение
 
-# Полный стек через Docker (app:3003, postgres:5440)
-docker compose up --build
+Полноценный портал: каталог с поиском и обложками для всех 943 книг, **AI-консультант «Кітапхан»** (RU/KK с автодетектом) на бесплатном Groq llama-3.3-70b, читалка с прогрессом, образовательный AI на школьной программе РК (146 произведений 1–11 кл.), генератор сказок с 6-голосной озвучкой kk-TTS, викторины, раскраски (5 SVG → PDF), календарь событий с автопостингом IG/TG, регистрация читателей с восстановлением пароля, геймификация (баллы/streak/leaderboard), полный CMS-редактор для библиотекарей.
+
+## Why этот стек
+
+- **Next.js 16** App Router + standalone — один Docker-образ, без vendor lock-in. Bilingual через next-intl 4 (`/ru/...` / `/kk/...`).
+- **Groq llama-3.3-70b** для всех текстовых AI-вызовов: free-tier, отклик ~900 ms (vs 2-5 с у Gemini), $0/сутки на проект. **Gemini только для kk-TTS** — единственная модель с нативным казахским.
+- **Постоянный USD-cap** ($0.50/сутки по умолчанию) на стороне сервера: `assertQuota` блокирует AI-вызов **до** запроса. Превышение → 429 с понятным сообщением (`retryHuman`, `Retry-After`).
+- **Postgres 16** + 13 идемпотентных миграций + `pg_dump` бэкапы. Никаких ORM — прямые SQL через `pg.Pool`.
+- **DejaVu Serif в Docker-образе** — единственный шрифт с кириллицей+казахскими глифами в alpine, без него librsvg рисует квадраты вместо букв.
+
+## Demo
+
+- **Live (через Cloudflare quick tunnel):** https://shown-regularly-bradley-temperature.trycloudflare.com/ru
+- Домен `*.kz` пока не зарегистрирован — демо для заказчика.
+
+## Архитектура
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser (PWA + WebSpeech)                                  │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ HTTPS via cloudflared
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Next.js 16 App Router (standalone)                         │
+│  • src/proxy.ts — locale-routing + admin optimistic gate    │
+│  • (public) — каталог / читалка / kids / events / контент   │
+│  • (admin) — role-gate в layout.tsx + 8 разделов CMS        │
+│  • api/ — 30+ REST-эндпоинтов                               │
+└──┬─────────────────┬───────────────┬────────────────────────┘
+   │                 │               │
+   ▼                 ▼               ▼
+Postgres 16    src/lib/llm/      Внешние сервисы
+(13 миграций)  ├─ dispatch ──┐   ├─ Groq (текст: chat/json)
+               ├─ groq.ts    │   ├─ Gemini (kk-TTS, fallback)
+               └─ gemini-direct.ts ├─ ElevenLabs (ru-TTS)
+                                  ├─ Telegram / Instagram
+                                  └─ Cloudflare quick tunnel
 ```
 
-Откройте [http://localhost:3003](http://localhost:3003) (Docker) или
-[http://localhost:3000](http://localhost:3000) (npm dev).
+Подробнее: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DATABASE.md](docs/DATABASE.md), [docs/API.md](docs/API.md).
 
-Без API-ключей приложение работает в demo-режиме (FAQ-fallback вместо AI).
-Минимальный обязательный ключ — `GEMINI_API_KEY`. Остальные опциональны
-(см. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
+## Quick Start
 
-## Технологии
+```bash
+git clone https://github.com/m34959203/smart-kids-library.git
+cd smart-kids-library
 
-- **Next.js 16.2.2** (App Router, standalone output) + **React 19** + TypeScript 5
-- **Tailwind 4**, Lucide-иконки
-- **PostgreSQL 16** (миграции 001–009)
-- **Google Gemini** (`@google/genai` 1.50) — chat, RAG, TTS, function-calling
-- **ElevenLabs** — KK TTS fallback
-- **NextAuth 4** (bcrypt + JWT, роли admin/librarian/reader)
-- **next-intl 4** (RU/KK)
+# 1. Окружение
+cp .env.example .env
+# отредактировать минимум: GROQ_API_KEY (для текста), GEMINI_API_KEY (для kk-TTS)
+
+# 2. Полный стек
+docker compose up --build
+# → http://localhost:3003 (app), localhost:5440 (postgres)
+
+# 3. Миграции 002–013 (001 идёт автоматом)
+for f in sql/00{2,3,4,5,6,7,8,9}_*.sql sql/01{0,1,2,3}_*.sql; do
+  docker compose exec -T db psql -U postgres -d smart_kids_library < "$f"
+done
+
+# 4. (опционально) Импорт фонда
+# Положить файлы в docs/Text/, потом:
+npm run books:import && npm run books:insert && npm run books:enrich
+npm run covers:tif && npm run covers:gen
+```
+
+Подробная инструкция и troubleshooting: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Стек
+
+| Слой | Технологии |
+|---|---|
+| Frontend | Next.js 16.2.2 · React 19.2 · TypeScript 5 · Tailwind 4 · Lucide |
+| Backend | Postgres 16 (`pg.Pool`, 13 миграций) · NextAuth 4 (SHA-256 + JWT) |
+| AI текст | **Groq** (`llama-3.3-70b-versatile`, `openai/gpt-oss-120b`) — основной |
+| AI голос | **Gemini** (`gemini-3.1-flash-tts-preview` — KK) · Google Cloud TTS / ElevenLabs (RU) |
+| Соцсети | Telegram Bot API · Instagram Graph API |
+| Хостинг | Docker Compose · Cloudflare quick tunnel · Plesk-готов |
+| i18n | next-intl 4 (RU/KK) |
 
 ## Возможности
 
-- 🔍 **Электронный каталог** на ~1 000 материалов с двухуровневой
-  локализацией (`title_ru` / `title_kk`), фильтрами по возрасту и **разделом
-  «Краеведение / Өлкетану»** (943 оцифрованных материала о Сатпаев/Улытау,
-  у каждого своя обложка — JPG-скан, рендер первой страницы PDF или
-  типографическая WebP).
-- 🤖 **Чат-помощник** (Gemini) c RAG из каталога/событий/новостей, KK/RU
-  автодетектом, эскалацией к библиотекарю, голосовым вводом (Web Speech API).
-- 📚 **Читалка** с прогрессом, закладками, изменением шрифта/темы.
-- 🎓 **Образовательный помощник** на базе школьной программы РК (146 произведений 1–11 кл.).
-- ✨ **Генератор сказок** RU/KK с multi-voice TTS (роли narrator/hero/villain/...).
-- 🧩 **Викторины, мастерская, раскраски** (PDF-экспорт через jspdf).
-- 📅 **Календарь событий** с автопостингом IG/TG (очередь + cron-tick).
-- 🛠 **Админка**: каталог, новости, события, CMS-страницы, меню,
-  база знаний AI, аналитика (`token_usage` + `chatbot_logs` + `visits`),
-  модерация AI-контента, социальные посты.
-- 🏆 **Геймификация**: баллы, достижения, streak, leaderboard.
-- ♿ **WCAG**: skip-link, focus-visible, high-contrast, dyslexic-friendly,
-  prefers-reduced-motion.
-- 🌐 **PWA** (offline shell, sw.js) + полный SEO (sitemap, robots, JSON-LD,
-  OpenGraph, alternates).
-
-## Документация
-
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — структура проекта, слои, ключевые решения.
-- [`docs/DATABASE.md`](docs/DATABASE.md) — схема (25 таблиц), миграции, индексы.
-- [`docs/API.md`](docs/API.md) — REST-эндпоинты.
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — деплой, env-переменные, прод-чеклист.
-- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — как контрибьютить.
-- [`NOTES.md`](NOTES.md) — живой журнал решений (источник истины по
-  статусу/договорённостям/рискам).
-- [`AGENTS.md`](AGENTS.md) — заметки для AI-помощников (gotchas Next 16).
-- [`CLAUDE.md`](CLAUDE.md) — справка для Claude Code.
+- **Каталог** — 943 материала с обложками 100% (614 нативных JPG + 135 TIF→WebP + 61 PDF→WebP + 133 типографических SVG)
+- **Чат «Кітапхан»** через Groq, ~900 ms; STT/TTS, эскалация к библиотекарю, автодетект языка
+- **Читалка** с прогрессом, закладками, шрифт/тема (light/sepia/dark), TTS-озвучивание
+- **Образовательный AI** — `school_curriculum` 146 произведений 1–11 классов
+- **Генератор сказок** 3 уровня сложности, multi-voice TTS (narrator/hero/villain/child/elder/magic)
+- **Викторины, мастерская, раскраски** (PDF-экспорт через jspdf)
+- **Календарь событий** с автопостингом IG/TG (очередь + cron-tick)
+- **Регистрация / восстановление пароля** (`/profile/{register,recover,reset}` + 3 API)
+- **Админка** — каталог, новости, события, CMS-страницы, меню, AI knowledge, аналитика, модерация, соц-посты
+- **Геймификация** — баллы, достижения, streak, leaderboard
+- **PWA** (offline shell, service worker) + полный SEO (sitemap/robots/JSON-LD/OpenGraph + ru/kk alternates)
+- **WCAG** — skip-link, focus-visible, high-contrast, dyslexic-friendly, prefers-reduced-motion
+- **AI-бюджет под контролем** — `ai_generations` журнал, USD-cap $0.50/день, per-user/anon квоты, понятные 429 для пользователя
 
 ## Скрипты NPM
 
@@ -82,22 +118,51 @@ npm run build             # next build (standalone)
 npm start                 # next start
 npm run lint              # eslint
 
-# Импорт фонда из docs/Text/ (см. NOTES.md)
-npm run books:import      # копирует в public/uploads/books/, пишет books-data.json
-npm run books:insert      # апсёртит в Postgres
+# Импорт фонда (Краеведение / Өлкетану)
+npm run books:import      # docs/Text/ → public/uploads/books/ + JSON
+npm run books:insert      # JSON → Postgres (UPSERT по original_filename)
 npm run books:enrich      # Pass 1: pdf-parse + mammoth → реальные заголовки
 
-# Обложки книг (идемпотентны, безопасно перезапускать)
-npm run covers:tif        # TIF-сканы → /uploads/covers/*.webp (sharp)
-npm run covers:gen        # PDF → 1-я страница; DOCX/no-file → типографический SVG
+# Обложки (идемпотентны, безопасно перезапускать)
+npm run covers:tif        # 135 TIF → /uploads/covers/*.webp (Sharp)
+npm run covers:gen        # 61 PDF → 1-я страница; 133 DOCX/no-file → типографика
 ```
 
-> Покрытие `cover_url`: 943/943 (614 нативных JPG-сканов, 135 TIF→WebP,
-> 61 PDF-обложек, 133 типографических). Скрипты пишут только записи с
-> пустым `cover_url`, не перезатирают существующие.
+> Покрытие `cover_url`: **943/943** (100%). Скрипты пишут только записи с пустым `cover_url`, не перезатирают существующие.
 
-## Лицензия и принадлежность
+## Roadmap
 
-Код — собственность КГУ «Детско-юношеская библиотека города Сатпаев».
-Содержание раздела «Краеведение» — оцифрованные материалы библиотеки,
-авторские права принадлежат соответствующим авторам/правообладателям.
+- [x] **MVP (2026-04)** — каталог, чат, генераторы, события, админка, геймификация
+- [x] **AI-стек на Groq + USD-cap (2026-05)** — все текстовые эндпоинты $0/сутки
+- [x] **Регистрация + восстановление пароля (2026-05-06)** — без email-инфры (токен в response для dev)
+- [x] **Audit log админ-действий (2026-05-06)** — модуль готов
+- [ ] **OCR для 851 скана** (Vision API / Tesseract) — извлечение метаданных
+- [ ] **SMTP / Telegram-бот для recover** — настоящая email-доставка
+- [ ] **Интеграции с открытыми каталогами** Kazlib.kz / Elibra.kz / Nabrk.kz — нужны договорённости с правообладателями
+- [ ] **Push-уведомления** о новых событиях
+- [ ] **PDF-сертификат** «прочитано N книг» для геймификации
+
+Подробно — [`NOTES.md`](NOTES.md).
+
+## Документация
+
+| Документ | О чём |
+|---|---|
+| [`NOTES.md`](NOTES.md) | Живой журнал решений, источник истины по статусу |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Структура проекта, слои, ключевые решения |
+| [`docs/DATABASE.md`](docs/DATABASE.md) | 29 таблиц, 13 миграций, индексы |
+| [`docs/API.md`](docs/API.md) | REST-эндпоинты |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Деплой, env-переменные, прод-чеклист |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Как контрибьютить, code style, conventional commits |
+| [`AGENTS.md`](AGENTS.md) | Заметки для AI-помощников (gotchas Next 16) |
+| [`CLAUDE.md`](CLAUDE.md) | Справка для Claude Code |
+
+## Контакты заказчика
+
+КГУ «Детско-юношеская библиотека города Сатпаев»
+Ұлытау обл., г. Сатпаев, ул. Кусаинова, 31-1
++7 (71063) 7-49-62 · biblioteka_15.86@mail.ru
+
+## Лицензия
+
+[MIT](LICENSE) — код. Содержимое раздела «Краеведение» (943 материала) принадлежит соответствующим авторам/правообладателям.

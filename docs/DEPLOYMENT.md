@@ -19,12 +19,18 @@ docker compose up --build
 ## Прогон миграций
 
 ```bash
-# 002–009 идемпотентны (CREATE … IF NOT EXISTS, ON CONFLICT)
-for f in sql/00{2,3,4,5,6,7,8,9}_*.sql; do
+# 002–013 идемпотентны (CREATE … IF NOT EXISTS, ON CONFLICT)
+for f in sql/00{2,3,4,5,6,7,8,9}_*.sql sql/01{0,1,2,3}_*.sql; do
   echo ">>> $f";
   docker compose exec -T db psql -U postgres -d smart_kids_library < "$f";
 done
 ```
+
+Новые миграции 010–013 (2026-05):
+- `010_ai_usage.sql` — журнал AI-вызовов
+- `011_tts_cache.sql` — L2 кэш TTS
+- `012_password_resets.sql` — восстановление пароля
+- `013_audit_log.sql` — журнал админ-действий
 
 ## Импорт каталога фонда (Өлкетану)
 
@@ -64,7 +70,7 @@ npm run covers:gen        # PDF → 1-я страница; DOCX/no-file → ти
 npm ci
 # БД
 psql -U postgres -d smart_kids_library -f sql/001_init.sql
-for f in sql/00{2,3,4,5,6,7,8,9}_*.sql; do
+for f in sql/00{2,3,4,5,6,7,8,9}_*.sql sql/01{0,1,2,3}_*.sql; do
   psql -U postgres -d smart_kids_library -f "$f";
 done
 # Билд
@@ -82,14 +88,22 @@ node .next/standalone/server.js
 | `DATABASE_URL` | строка подключения PostgreSQL |
 | `NEXTAUTH_SECRET` | `openssl rand -base64 32`; должен быть ≥ 32 байт |
 | `NEXTAUTH_URL` | внешний URL сайта |
-| `GEMINI_API_KEY` | ключ Google Gemini (минимально для AI-фич) |
+| `GROQ_API_KEY` | основной LLM (chatbot/stories/quizzes/etc — $0 free-tier) |
+| `GEMINI_API_KEY` | для kk-TTS и failover при Groq 429 |
+| `LLM_PROVIDER` | `groq` (рекомендуется) / `gemini` / `auto` |
 | `NEXT_PUBLIC_APP_URL` | публичный URL для метаданных и CORS |
 
 ### Опциональные
 
 | Variable | Описание |
 |----------|---------|
-| `GEMINI_DAILY_TOKEN_LIMIT` | дневной лимит Gemini (по умолч. 1 500 000) |
+| `AI_USD_CAP_DAILY` | дневной USD-cap (по умолч. `0.50`) — блокирует AI при 90% от cap |
+| `AI_USD_CAP_TOTAL` | период USD-cap (по умолч. `4.50`) |
+| `AI_USD_CAP_PERIOD_START` | дата начала периода (`YYYY-MM-DD`) |
+| `AI_USER_RPD` / `AI_USER_RPM` / `AI_USER_USD_DAILY` | per-user квоты (40 / 5 / 0.05) |
+| `AI_ANON_RPD` / `AI_ANON_RPM` | per-IP квоты для анонов (12 / 3) |
+| `RECOVER_TOKEN_IN_RESPONSE` | в проде ставить `0` — иначе `/api/auth/recover` возвращает токен в response (dev-режим) |
+| `GEMINI_DAILY_TOKEN_LIMIT` | старый лимит, оставлен для совместимости (по умолч. 1 500 000) |
 | `ELEVENLABS_API_KEY` + `ELEVENLABS_VOICE_ID` | KK TTS fallback |
 | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHANNEL_ID` | автопостинг TG |
 | `INSTAGRAM_ACCESS_TOKEN` + `INSTAGRAM_ACCOUNT_ID` | автопостинг IG |

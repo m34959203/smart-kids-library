@@ -18,8 +18,12 @@ PostgreSQL 16. Схема разворачивается через идемпо
 | `007_import_dubsatpaev.sql` | импорт со старого сайта dubsatpaev.kz: реквизиты, новости, события, FAQ, меню |
 | `008_extend_books_for_lore.sql` | расширение books для краеведческого фонда: category, category_kk, title_ru/kk, description_ru/kk, file_type, file_size, content_text, content_type, is_digital, original_filename + GIN-индекс |
 | `009_security_curriculum_cors.sql` | CASCADE на social_posts→news/events; расширение school_curriculum 17→146 произведений |
+| `010_ai_usage.sql` | `ai_generations` журнал (provider/model/purpose/tokens/cost_usd/duration_ms/user_id) — для USD-cap и compliance |
+| `011_tts_cache.sql` | `tts_cache` персистентный кеш (sha256(provider+model+voice+text) → audio_base64) поверх L1 in-memory |
+| `012_password_resets.sql` | токены восстановления пароля (TTL 1 ч, одноразовые) |
+| `013_audit_log.sql` | журнал админ-действий (actor + action + target + ip + user_agent + metadata jsonb) |
 
-## Таблицы (25)
+## Таблицы (29)
 
 ### Учётные
 
@@ -53,8 +57,17 @@ PostgreSQL 16. Схема разворачивается через идемпо
 | `chatbot_knowledge` | FAQ для AI-фоллбэка (category, question, answer, language) |
 | `chatbot_logs` | логи диалогов |
 | `chat_escalations` | эскалации к библиотекарю |
-| `token_usage` | дневной учёт Gemini токенов |
+| `token_usage` | дневной учёт токенов (старая таблица, оставлена для совместимости с /admin/analytics) |
+| `ai_generations` | **per-call** журнал AI-вызовов (provider/model/purpose/tokens/**cost_usd**/duration_ms) — основная таблица для USD-cap и compliance |
+| `tts_cache` | L2 персистентный кеш TTS (sha256 ключ + audio_base64 + hits) |
 | `moderation_items` | очередь модерации AI-контента |
+
+### Безопасность / аудит
+
+| Table | Назначение |
+|-------|-----------|
+| `password_resets` | токены восстановления пароля (TTL 1 ч, `used_at` маркирует одноразовое использование) |
+| `audit_log` | журнал критических админ-действий (actor + action + target + ip + ua + metadata) |
 
 ### Инфраструктура
 

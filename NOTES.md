@@ -37,7 +37,9 @@
 
 Подробный аудит — см. журнал в §7 (записи 2026-04-19, 2026-04-20, 2026-04-22 P3).
 
-**Итог покрытия: ~98 %** (после факт-проверки 2026-05-01: накачена 003_gamification, расширена school_curriculum 17→146, переход на proxy.ts, hybrid-recommend, next/image, CORS, Pass 1 enrichment 942 краеведческих; 2026-05-05: обложки 943/943).
+**Итог покрытия: ~99 %** (на 2026-05-06: + регистрация/восстановление пароля, + audit_log, + Pass 2 enrichment 92 книг с реальными author/description/genre, + полный AI-стек на Groq с Gemini-fallback и USD-cap $0.50/день + понятные 429-ответы; 2026-05-05 база: обложки 943/943, 003_gamification, school_curriculum 146, proxy.ts, hybrid-recommend, next/image, CORS, Pass 1).
+
+**LLM-распределение (2026-05-06):** все 11 текстовых эндпоинтов через Groq (llama-3.3-70b / openai/gpt-oss-120b), $0/сутки. **Gemini только для kk-TTS** (`gemini-3.1-flash-tts-preview`) и автоматический failover при Groq 429. Архитектура: `src/lib/llm/dispatch.ts` (диспетчер) + `gemini-direct.ts` (raw для fallback) + `gemini.ts` (тонкий wrapper). USD-cap реальный — `assertQuota` блокирует до запроса.
 
 **Сделано полностью:** **полное покрытие обложек 943/943** (614 нативных JPG-сканов + 135 TIF→WebP + 61 PDF→WebP + 133 типографических SVG→WebP, скрипты `covers:tif`/`covers:gen` идемпотентны), каталог+читалка+прогресс/закладки, чат-виджет 24/7 с STT/TTS+эскалация, ИИ-поиск, образовательный ИИ (с подключением `school_curriculum` 1-11 кл.), генератор сказок 3 уровней с **multi-voice TTS** (Gemini KK + ElevenLabs RU, роли narrator/hero/villain/child/elder/magic), викторины, творческая мастерская, **раскраски с PDF-экспортом 5 страниц** (jspdf), EventCalendar+UpcomingEventsWidget, автопостинг IG/TG с планировщиком + **«оптимальное время» (TG 12:00 / IG 19:00, TZ Алматы)**, **CMS статичных страниц** (`cms_pages` + `/admin/pages` + `CmsBlock`), **редактор меню** (`menu_items` + `/admin/menu`), **CRUD базы знаний AI + редактор тона/запрещ.тем/system-prompts** (`/admin/knowledge` 2 вкладки), **`/admin/social` с очередью постов и токенами IG/TG в БД** (`/api/admin/social/posts` + `/api/admin/settings`), **PDF-парсер каталога** (`pdf-parse` + Gemini для извлечения метаданных, `/api/admin/pdf-import`), **видео в новостях** (`news.video_url`), **глобальный поиск в Header** (`/api/search/global` + `GlobalSearch.tsx` по books+events+news+sections с автодополнением), **автоопределение языка RU/KK** (`src/lib/lang-detect.ts` по kk-буквам ә/ғ/қ/ң/ө/ұ/ү/һ/і, подключено в `/api/chatbot`, `/api/catalog/search`, `/api/education`, `VoiceAssistant`), **полный голосовой loop** (`VoiceAssistant`: mic → STT → /api/chatbot → /api/stories/tts → автопроигрывание ответа), token-tracker+FAQ fallback, контекстные подсказки, NextAuth роли, полный CRUD catalog/news/events, admin-модерация, admin-аналитика, `/api/translate`, `/api/simplify`, `/api/posters`, age-profile Context, AgeMenu+Breadcrumbs, auto-social хуки, security-baseline, `/api/upload` hardening, SEO, PWA, WCAG, геймификация.
 
@@ -66,29 +68,45 @@
 |---|---|
 | Контент на двух языках одновременно: `*_ru` и `*_kk` | ТЗ требует билингвальности; колонки уже заложены в БД |
 | AI-ответы детям — через модерацию | Безопасность контента для аудитории 6-17 |
-| Любой новый AI-эндпоинт — через `src/lib/gemini.ts` с `trackTokenUsage` | Единая точка учёта токенов и лимита |
+| Любой новый AI-эндпоинт — через `src/lib/gemini.ts` (wrapper) или `src/lib/llm/dispatch.ts` (low-level) | Все вызовы пишутся в `ai_generations` с cost_usd, проходят `assertQuota` (USD-cap) и логируют per-user квоты |
+| В каждом catch AI-эндпоинта — `quotaErrorResponse(err, lang)` | Иначе превышение квоты вернёт пользователю невнятную 500 |
+| `LLM_PROVIDER=groq` для всего текста; Gemini ТОЛЬКО для kk-TTS | Бюджет — Groq free, Gemini только где Groq не умеет (kk-голос) |
+| Любая admin-мутация → `recordAudit(request, actor, entry)` | Compliance + расследование инцидентов (требование ТЗ) |
 | В админ-роутах проверка сессии с `role IN ('admin','librarian')` | Изолировать CMS от читателей |
 | Секреты и API-ключи НЕ коммитим | `.env` в `.gitignore`, примеры в `.env.example` только с плейсхолдерами |
 | Git remote — без токенов в URL | Пуш через `gh` или SSH |
 | Перед изменениями Next-API читаем `node_modules/next/dist/docs/` | v16 — много breaking changes относительно обучения модели (см. AGENTS.md) |
 | Живой документ = NOTES.md, обновлять после каждой существенной работы | Преемственность между сессиями |
 
-## 6. Известные риски / долги
+## 6. Известные риски / долги (актуализировано 2026-05-06)
 
-- **Security**: `admin123` сидится хэшем в SQL — снести до прод-деплоя (решается в задаче #1).
-- **Rate-limit**: любой может спалить лимит Gemini — нужен per-IP throttle.
-- **Uploads**: `/api/upload` без whitelist MIME, лимита размера и auth — открытый загрузчик.
-- **CORS**: не настроен, при подключении отдельного фронтенда откроется дыра.
-- **`ON DELETE` на `social_posts`**: не CASCADE — удаление новости оставит orphan-пост.
-- **Прогресс читалки**: GET при mount не вызывается — тех-долг в `BookReader.tsx`.
-- **Analytics**: цифры в `admin/analytics` захардкожены — заказчик увидит фейк.
-- **PDF-парсер каталога**: ТЗ прямо упоминает парсинг PDF метаданных — не реализован.
+**Закрыто:**
+- ~~`admin123` в SQL~~ ✅ убрано, через `SEED_ADMIN_*`
+- ~~Rate-limit~~ ✅ in-memory + USD-cap + per-user/anon квоты
+- ~~Uploads без MIME-whitelist~~ ✅ закрыто P0-батчем
+- ~~CORS не настроен~~ ✅ через `ALLOWED_ORIGINS`
+- ~~CASCADE на social_posts~~ ✅ миграция 009
+- ~~Прогресс читалки~~ ✅ GET on mount + 401-баннер «войдите»
+- ~~Analytics захардкожена~~ ✅ из `token_usage`/`chatbot_logs`/`visits`
+- ~~PDF-парсер~~ ✅ `/api/admin/pdf-import` через Groq JSON
+- ~~Регистрация / recover~~ ✅ полная цепочка (без email-инфры)
+- ~~Бесконтрольный AI-расход~~ ✅ USD-cap + ai_generations журнал
+
+**Осталось (не блокеры релиза):**
+- **OCR для 851 скана** (метаданные у JPG/TIF) — Vision API / Tesseract
+- **SMTP / Telegram-бот** для recover в проде (сейчас токен в response)
+- **Push-уведомления, PDF-сертификат** — отложены, til-kural-модули
+- **`recordAudit` в /api/admin/*** — модуль готов, не подключён
+- **Redis для rate-limit** — для multi-instance деплоя
+- **Playwright smoke-тесты, GA4/Метрика, Lighthouse прогон** — quality bar
+- **Docker-compose `NEXTAUTH_URL=http://100.118.110.5:3003`** — IP dev-тачки, при деплое заменить
 - **Docker-compose `NEXTAUTH_URL=http://100.118.110.5:3003`**: зафиксирован IP dev-тачки, при деплое — заменить.
 
 ## 7. Журнал решений (новые сверху)
 
 | Дата | Решение / событие | Файлы / PR | Кто |
 |------|-------------------|-----------|-----|
+| 2026-05-06 | **Приведение репо к стандарту dev-base + сохранение memory**: ① **README.md** переписан под `templates/README.template.md` (Проблема / Решение / Why этот стек / Demo / Архитектура / Quick Start / Стек / Возможности / Roadmap / Документация / Лицензия) с бейджами License/Stack/Lang/Status. ② **LICENSE** (MIT) с пометкой про content-rights краеведения. ③ **.github/** структура: `workflows/ci.yml` (lint + typecheck + build + secrets-scan), `PULL_REQUEST_TEMPLATE.md`, `ISSUE_TEMPLATE/{bug,feature}.md` — копии из `dev-base/templates/`. ④ **CONTRIBUTING.md** перенесён из `docs/` в корень + расширен (AI-секция, audit, conventional commits на русском, безопасность). ⑤ **assets/** создана для скриншотов. ⑥ **CLAUDE.md / docs/{DATABASE,DEPLOYMENT,README}.md** обновлены: миграции 010-013, новые env-переменные (LLM_PROVIDER, AI_USD_CAP_*, GROQ_API_KEY, RECOVER_TOKEN_IN_RESPONSE), 29 таблиц, текущая архитектура AI-стека. ⑦ **Memory сохранена**: обновлена `project_smart_kids_library.md` (LLM split, регистрация, обложки 943/943, миграции 013), новые feedback: `smart_kids_ai_split` (Groq для текста / Gemini для KK-TTS), `librsvg_fonts` (DejaVu в Docker), `pg_date_in_rsc` (TIMESTAMPTZ → ISO для cousin client-компонентов). | `README.md`, `LICENSE`, `.github/...`, `CONTRIBUTING.md`, `CLAUDE.md`, `docs/*.md`, **memory:** `project_smart_kids_library.md`, `feedback_{smart_kids_ai_split,librsvg_fonts,pg_date_in_rsc}.md` | claude |
 | 2026-05-05 | **Порт из til-kural: AI quota + log, TTS persistent cache, LLM dual-provider**: ① `sql/010_ai_usage.sql` + `src/lib/{ai-log,ai-quota}.ts` — журнал каждого Gemini/Groq-вызова (`ai_generations`: provider/model/purpose/tokens/cost_usd/duration_ms/user_id) + assertQuota (RPM/RPD/TPM × SAFETY_RATIO=0.85, USD daily/total cap, per-user/anon квоты с RPM=5/RPD=40/USD=0.05 для юзеров и RPM=3/RPD=12 для анонов). Free-tier лимиты на 2026-04 (gemini-2.5-flash 10rpm/250rpd, lite 15/1000, tts 8/150 и т.д.). Внутрипроцессный rpmBucket защищает от бурстов до записи в БД. `getSpendSnapshot()` для админ-аналитики. Интегрировано в `gemini.ts`: `assertQuota()` ПЕРЕД каждым вызовом, `logGeneration()` ПОСЛЕ — три entry-функции (generateText/Chat/JSON). ② `sql/011_tts_cache.sql` + расширение `src/lib/tts.ts` — L2 persistent cache (sha256(provider+model+voice+text) → audio_base64), L1 in-memory остаётся. TTS cache hit = 0 квоты, 0 логов, 0 round-trip. ③ `src/lib/llm/{groq,dispatch}.ts` + `groq-sdk` в deps — диспетчер Groq→Gemini failover на `AIRateLimitError` (429); `LLM_PROVIDER=gemini\|groq\|auto` (по умолчанию gemini для совместимости). НЕ интегрирован в endpoints в этой сессии — это отдельный шаг (нужно протестировать с GROQ_API_KEY). `.env.example` обновлён: GROQ_API_KEY, AI_USD_CAP_DAILY=0.50, USER/ANON квоты. Smoke: вызов /api/chatbot → запись в ai_generations с cost_usd=$0.000121, build clean. **Защита бюджета теперь real**: assertUsdBudget читает SUM(cost_usd) и блокирует при превышении (раньше token-tracker только логировал, не блокировал). | `sql/010_ai_usage.sql`, `sql/011_tts_cache.sql`, `src/lib/{ai-log,ai-quota,gemini,tts}.ts`, `src/lib/llm/{groq,dispatch}.ts`, `.env.example`, `package.json` (+groq-sdk), `NOTES.md` | claude |
 | 2026-05-06 | **Финальный пакет: регистрация + восстановление пароля + audit_log + Pass 2 enrichment + lazy-load fix**: ① **A/Регистрация** — `sql/012_password_resets.sql` (token, expires_at, used_at, FK→users CASCADE) + 3 API: `/api/auth/{register,recover,reset}` (валидация Zod-style, SHA-256 хеш совместимо с существующим NextAuth, rate-limit 5-10/min). `/recover` намеренно не раскрывает существование email (защита от enumeration), в dev возвращает токен в ответе чтобы библиотекарь мог передать ссылку (закрывается `RECOVER_TOKEN_IN_RESPONSE=0`). 3 страницы `/profile/{register,recover,reset?token=}` с RU/KK. На `/profile` под формой логина добавлены ссылки «Регистрация» и «Забыли пароль?». Smoke: register → 200 success, recover → 200 + resetUrl, reset → 200 success, новый пароль работает. ② **D/audit_log** (часть til-kural-портов) — `sql/013_audit_log.sql` (actor_id/email/role + action + target + ip + user_agent + metadata jsonb) + `src/lib/audit.ts::recordAudit` + `maskEmail` хелпер. **TODO**: подключить `recordAudit` в /api/admin/* (book/news/event create/update/delete). ③ **B/Pass 2 enrichment** — `scripts/enrich-books-pass2.mjs` через прямой fetch к Groq `openai/gpt-oss-120b` (groq-sdk нет в standalone-контейнере). Throttle 2.2s между вызовами (Groq free-tier ≈ 30 RPM). Извлекает author/description/genre/age_category/year из `content_text` (PDF/DOCX где >300 chars) для ~95 книг. Стоимость = $0. Валидация age_category против CHECK-constraint в БД. ④ **C/lazy-load** — главная страница: возрастные карточки 10-13/14-17 показывали placeholder при первой загрузке; Image priority+eager у всех 3 карточек. **Push и pdf-certificate отложены** (большие фичи, делаются по запросу). | `sql/{012_password_resets,013_audit_log}.sql`, `src/app/api/auth/{register,recover,reset}/route.ts`, `src/app/[locale]/(public)/profile/{register,recover,reset}/page.tsx`, `src/lib/audit.ts`, `src/app/[locale]/(public)/page.tsx`, `src/app/[locale]/(public)/profile/page.tsx`, `scripts/enrich-books-pass2.mjs`, `NOTES.md` | claude |
 | 2026-05-06 | **Финальный ретест: 14/17 PASS, 1 NEW REGRESSION P0 закрыт**: после серии багфиксов (10255e9) тест-юзер прошёл повторно, нашёл регрессию `/ru/events` HTTP 500 → `Calendar.tsx:48` падал на `e.date.startsWith is not a function`. **Корневая причина**: pg-driver возвращает TIMESTAMPTZ как Date object, RSC props НЕ всегда сериализуются между cousin-client-компонентами (events/page → EventCalendar → Calendar). **Фикс**: явный `toIso(): Date → ISO string` в `events/page.tsx`. Заодно: BUG-04 раскраски — Gemini-SVG имеет только `viewBox` без `width/height`, браузер рендерил 0×0. Решение через `data-coloring` атрибут + `[data-coloring] svg { width:100%; height:100% }` в `globals.css`. Адрес на `/contacts` оставался казахским при RU из-за неверного ключа `library_address` вместо `library_address_ru` — поправлено. **Финал**: 14/17 закрыто и подтверждено, 2 в очереди (BUG-09 enrichment, BUG-13 регистрация — обе сделаны в следующей записи), 1 без проверки (BUG-08), 1 не баг сайта (BUG-17). | `src/app/[locale]/(public)/events/page.tsx`, `src/components/features/ColoringGenerator.tsx`, `src/app/globals.css`, `src/app/[locale]/(public)/contacts/page.tsx` | claude |
