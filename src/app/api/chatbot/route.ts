@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateChat } from "@/lib/gemini";
+import { dispatchChat } from "@/lib/llm/dispatch";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { getMany, query } from "@/lib/db";
 import { v4 as uuid } from "uuid";
@@ -121,27 +121,32 @@ export async function POST(request: NextRequest) {
     const systemPrompt = SYSTEM_PROMPTS[mode]?.[language] ?? SYSTEM_PROMPTS.general.ru;
 
     const chatHistory = history.map((h) => ({
-      role: h.role === "user" ? ("user" as const) : ("model" as const),
+      role: h.role === "user" ? ("user" as const) : ("assistant" as const),
       content: h.content,
     }));
-    chatHistory.push({ role: "user" as const, content: message });
 
-    const result = await generateChat(chatHistory, systemPrompt, "chatbot");
+    const result = await dispatchChat(systemPrompt, message, chatHistory, {
+      purpose: "chatbot",
+      maxTokens: 800,
+      temperature: 0.7,
+    });
 
     try {
       await query(
         `INSERT INTO chatbot_logs (session_id, user_message, bot_response, language, tokens_used)
          VALUES ($1, $2, $3, $4, $5)`,
-        [sessionId, message, result.text, language, result.tokensUsed]
+        [sessionId, message, result.content, language, result.tokensUsed]
       );
     } catch {
       // logging is best-effort
     }
 
     return NextResponse.json({
-      response: result.text,
+      response: result.content,
       tokensUsed: result.tokensUsed,
       source: "ai",
+      provider: result.provider,
+      model: result.model,
       sessionId,
     });
   } catch (error) {

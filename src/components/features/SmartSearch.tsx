@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SearchBar from "@/components/ui/SearchBar";
 import Badge from "@/components/ui/Badge";
 import BookCard from "./BookCard";
@@ -24,6 +24,13 @@ export default function SmartSearch({ locale }: SmartSearchProps) {
   const [loading, setLoading] = useState(false);
   const [aiFilters, setAiFilters] = useState<string[]>([]);
   const [searchPerformed, setSearchPerformed] = useState(false);
+
+  // Скрываем основной "Из коллекции"-блок (он SSR), пока активен поиск.
+  // CSS-правило в globals.css ловит data-атрибут и убирает [data-collection].
+  useEffect(() => {
+    document.body.dataset.searchActive = searchPerformed ? "1" : "0";
+    return () => { delete document.body.dataset.searchActive; };
+  }, [searchPerformed]);
 
   const suggestions = locale === "kk"
     ? ["Балаларға арналған ертегілер", "Ғылыми-фантастика", "Мектеп оқулықтары", "Қазақ әдебиеті"]

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateText } from "@/lib/gemini";
+import { generateText, generateJSON } from "@/lib/gemini";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -69,31 +69,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ svg: FALLBACK_SVG(theme), source: "limit-fallback" });
   }
 
-  const prompt = `Generate ONLY a single self-contained SVG coloring page for children — theme: "${theme}".
-Hard requirements:
-- Output starts with <svg and ends with </svg>. No markdown fences, no prose, no explanations.
-- viewBox="0 0 400 400", xmlns="http://www.w3.org/2000/svg".
-- Outline-only line art (fill="none"), stroke="#000", stroke-width 2-3.
-- Wrap shapes in <g stroke="#000" stroke-width="3" fill="none">.
-- No <text>, no <image>, no <foreignObject>, no <script>, no event handlers.
-- Close every tag. Use double quotes for attributes.
-- Total output must be under 3000 characters.`;
+  // Попытка 1: structured JSON через responseMimeType (Gemini надёжнее, чем
+  // голый текст — не ставит markdown-фенсы, не вставляет «Here is...»).
+  try {
+    const { data } = await generateJSON<{ svg: string }>(
+      `Создай раскраску-контур для детей. Тема: "${theme}".
+Требования:
+- viewBox="0 0 400 400", xmlns="http://www.w3.org/2000/svg"
+- Outline-only line art: fill="none", stroke="#000", stroke-width 2-3
+- Оборачивай фигуры в <g stroke="#000" stroke-width="3" fill="none">
+- Запрещены: <text>, <image>, <foreignObject>, <script>, on*-handlers
+- Закрывай все теги, двойные кавычки в атрибутах
+- Длина SVG ≤ 3000 символов`,
+      `Ты — генератор детских раскрасок. Возвращай ровно JSON {"svg":"<svg>...</svg>"}, без пояснений.`
+    );
+    const svg = extractSvg(data?.svg ?? "");
+    if (svg) return NextResponse.json({ svg, source: "ai" });
+  } catch (error) {
+    console.error("Coloring JSON-mode failed:", error);
+  }
 
-  // До 2 попыток: при первом fail повторяем с более жёстким system-промптом
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const result = await generateText(prompt, {
-        temperature: attempt === 0 ? 0.7 : 0.4,
-        maxTokens: 4096,
-        endpoint: "coloring",
-      });
-      const svg = extractSvg(result.text);
-      if (svg) {
-        return NextResponse.json({ svg, source: attempt === 0 ? "ai" : "ai-retry" });
-      }
-    } catch (error) {
-      console.error(`Coloring attempt ${attempt + 1} error:`, error);
-    }
+  // Попытка 2: голый текст с очень жёстким префиксом (на случай если JSON-mode упал)
+  try {
+    const result = await generateText(
+      `Output ONLY raw SVG markup, no fences, no prose, no quotes around the SVG. Start with "<svg" and end with "</svg>".
+Theme: "${theme}".
+viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" + outline-only line art (fill="none", stroke="#000", stroke-width 2-3).
+Forbidden: <text>, <image>, <foreignObject>, <script>, on*-handlers. Total ≤ 3000 chars.`,
+      { temperature: 0.4, maxTokens: 4096, endpoint: "coloring-fallback" }
+    );
+    const svg = extractSvg(result.text);
+    if (svg) return NextResponse.json({ svg, source: "ai-retry" });
+    console.error("Coloring text-mode raw output (truncated):", result.text.slice(0, 300));
+  } catch (error) {
+    console.error("Coloring text-mode failed:", error);
   }
 
   return NextResponse.json({ svg: FALLBACK_SVG(theme), source: "fallback" });

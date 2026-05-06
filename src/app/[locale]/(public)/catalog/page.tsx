@@ -175,7 +175,7 @@ export default async function CatalogPage({
             : "Книг для этого возраста пока нет."}
         </p>
       ) : (
-        <section className="mb-12">
+        <section className="mb-12" data-collection>
           <div className="section-eyebrow mb-4 flex items-center gap-3">
             <span className="inline-block w-8 h-px bg-current" aria-hidden />
             {section === "lore"

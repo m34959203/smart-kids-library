@@ -39,11 +39,17 @@ export default function NewsCard({ slug, title, excerpt, imageUrl, category, pub
             />
           ) : (
             <div
-              className="w-full h-full flex items-end p-5"
-              style={{ background: "linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%)" }}
+              className="w-full h-full flex flex-col justify-between p-5"
+              style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 60%, var(--accent, #b8732d) 100%)" }}
             >
-              <div className="font-display text-white text-xl leading-tight line-clamp-3 max-w-[80%]">
-                {title}
+              <div className="text-white/80 text-3xl leading-none" aria-hidden>📰</div>
+              <div>
+                <div className="text-[10px] tracking-[0.3em] uppercase font-mono text-white/70 mb-1.5">
+                  {locale === "kk" ? "Жаңалық" : "Новость"}
+                </div>
+                <div className="font-display text-white text-xl leading-tight line-clamp-3 text-balance">
+                  {title}
+                </div>
               </div>
             </div>
           )}

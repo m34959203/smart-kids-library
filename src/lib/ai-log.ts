@@ -41,7 +41,10 @@ const PRICING_PAID: Record<string, {
   "openai/gpt-oss-120b": { input: 0.15, output: 0.75 },
 };
 
-function estimateCostUsd(model: string, promptTok: number, complTok: number): number {
+function estimateCostUsd(provider: Provider, model: string, promptTok: number, complTok: number): number {
+  // Groq на free-tier стоит $0; считаем как 0, иначе USD-cap некорректно блокирует чат.
+  // Если в будущем подключат paid Groq — поставить GROQ_PAID_TIER=1 в env.
+  if (provider === "groq" && process.env.GROQ_PAID_TIER !== "1") return 0;
   const p = PRICING_PAID[model];
   if (!p) return 0;
   const inputCost = (promptTok * p.input) / 1_000_000;
@@ -59,7 +62,7 @@ export async function logGeneration(params: LogParams): Promise<void> {
   const promptTokens = Math.max(0, Math.floor(params.promptTokens ?? 0));
   const completionTokens = Math.max(0, Math.floor(params.completionTokens ?? 0));
   const durationMs = Math.max(0, Math.floor(params.durationMs ?? 0));
-  const costUsd = estimateCostUsd(params.model, promptTokens, completionTokens);
+  const costUsd = estimateCostUsd(params.provider, params.model, promptTokens, completionTokens);
 
   try {
     await query(

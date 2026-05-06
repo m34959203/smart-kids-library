@@ -1,6 +1,35 @@
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import EventCalendar from "@/components/features/EventCalendar";
 import ContextualHints from "@/components/features/ContextualHints";
+import { getMany } from "@/lib/db";
+
+interface EventRow {
+  id: number;
+  title_ru: string;
+  title_kk: string | null;
+  description_ru: string | null;
+  description_kk: string | null;
+  event_type: string;
+  start_date: string;
+  end_date: string | null;
+  location: string | null;
+  age_group: string | null;
+}
+
+async function loadEvents(): Promise<EventRow[]> {
+  try {
+    return await getMany<EventRow>(
+      `SELECT id, title_ru, title_kk, description_ru, description_kk,
+              event_type, start_date, end_date, location, age_group
+         FROM events
+        WHERE status = 'active' AND start_date >= NOW() - INTERVAL '60 days'
+        ORDER BY start_date ASC
+        LIMIT 200`
+    );
+  } catch {
+    return [];
+  }
+}
 
 export default async function EventsPage({
   params,
@@ -12,45 +41,17 @@ export default async function EventsPage({
   const messages = await getMessages(validLocale);
   const kk = validLocale === "kk";
 
-  const sampleEvents = [
-    {
-      id: 1,
-      title: kk ? "Кітап шеберлік сыныбы" : "Мастер-класс по книжному дизайну",
-      description: kk ? "Өз кітабыңызды жасауды үйренеміз!" : "Научимся создавать свои книги!",
-      event_type: "workshop",
-      start_date: "2026-04-10T14:00:00",
-      location: kk ? "Оқу залы" : "Читальный зал",
-      age_group: "10-13",
-    },
-    {
-      id: 2,
-      title: kk ? "Жазушымен кездесу" : "Встреча с детским писателем",
-      description: kk ? "Танымал балалар жазушысымен кездесу." : "Встреча с популярным детским автором.",
-      event_type: "author_meeting",
-      start_date: "2026-04-15T16:00:00",
-      location: kk ? "Конференц-зал" : "Конференц-зал",
-      age_group: "all",
-    },
-    {
-      id: 3,
-      title: kk ? "Оқу конкурсы" : "Конкурс чтецов",
-      description: kk ? "Ең жақсы оқырман атағы үшін жарысыңыз!" : "Соревнуйтесь за звание лучшего чтеца!",
-      event_type: "contest",
-      start_date: "2026-04-20T15:00:00",
-      location: kk ? "Үлкен зал" : "Большой зал",
-      age_group: "14-17",
-    },
-    {
-      id: 4,
-      title: kk ? "Сурет көрмесі" : "Выставка иллюстраций",
-      description: kk ? "Балалардың кітап суреттері көрмесі." : "Выставка детских книжных иллюстраций.",
-      event_type: "exhibition",
-      start_date: "2026-04-08T10:00:00",
-      end_date: "2026-04-25T18:00:00",
-      location: kk ? "Көрме залы" : "Выставочный зал",
-      age_group: "6-9",
-    },
-  ];
+  const rows = await loadEvents();
+  const events = rows.map((r) => ({
+    id: r.id,
+    title: (kk ? r.title_kk : r.title_ru) || r.title_ru || r.title_kk || "",
+    description: (kk ? r.description_kk : r.description_ru) || r.description_ru || r.description_kk || "",
+    event_type: r.event_type,
+    start_date: r.start_date,
+    end_date: r.end_date ?? undefined,
+    location: r.location ?? "",
+    age_group: r.age_group ?? "all",
+  }));
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 md:py-14">
@@ -64,7 +65,13 @@ export default async function EventsPage({
         </h1>
       </header>
 
-      <EventCalendar events={sampleEvents} locale={validLocale} />
+      {events.length === 0 ? (
+        <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
+          {kk ? "Жоспарланған шаралар әзірге жоқ." : "Запланированных событий пока нет."}
+        </p>
+      ) : (
+        <EventCalendar events={events} locale={validLocale} />
+      )}
       <ContextualHints page="events" locale={validLocale} />
     </div>
   );

@@ -19,6 +19,8 @@ export default function BookReader({ bookId, title, content, totalPages, initial
   const [theme, setTheme] = useState<"light" | "sepia" | "dark">("light");
   const [bookmarked, setBookmarked] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [authNeeded, setAuthNeeded] = useState(false);
+  const [authBannerDismissed, setAuthBannerDismissed] = useState(false);
 
   const themes = {
     light: { bg: "bg-white", text: "text-gray-900" },
@@ -75,13 +77,14 @@ export default function BookReader({ bookId, title, content, totalPages, initial
 
   const saveProgress = useCallback(async () => {
     try {
-      await fetch("/api/catalog", {
+      const res = await fetch("/api/catalog", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookId, currentPage, totalPages, bookmarked }),
       });
+      if (res.status === 401) setAuthNeeded(true);
     } catch {
-      // Silent fail
+      // Silent fail на сетевую ошибку — авторизация тут ни при чём.
     }
   }, [bookId, currentPage, totalPages, bookmarked]);
 
@@ -99,6 +102,24 @@ export default function BookReader({ bookId, title, content, totalPages, initial
 
   return (
     <div className="max-w-3xl mx-auto">
+      {authNeeded && !authBannerDismissed && (
+        <div className="rounded-xl px-4 py-3 mb-3 flex items-center justify-between gap-3 text-sm"
+             style={{ background: "var(--accent-soft, #fff7e6)", border: "1px solid var(--border)" }}>
+          <span>
+            {locale === "kk"
+              ? "Прогресс пен бетбелгілерді сақтау үшін кіріңіз — қазір ол сақталмайды."
+              : "Войдите, чтобы сохранять прогресс и закладки — сейчас они не сохраняются."}
+          </span>
+          <span className="flex items-center gap-2 shrink-0">
+            <a href={`/${locale}/profile?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`}
+               className="font-semibold underline">
+              {locale === "kk" ? "Кіру" : "Войти"}
+            </a>
+            <button onClick={() => setAuthBannerDismissed(true)}
+                    className="opacity-60 hover:opacity-100" aria-label="Закрыть">✕</button>
+          </span>
+        </div>
+      )}
       {/* Controls bar */}
       <div className="sticky top-16 z-10 bg-white/95 backdrop-blur-md border-b border-purple-100 p-3 flex items-center justify-between gap-2 flex-wrap">
         <h2 className="font-bold text-purple-900 text-sm truncate max-w-[200px]">{title}</h2>

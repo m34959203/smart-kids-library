@@ -27,7 +27,7 @@ export function organizationSchema() {
       streetAddress: "ул. Кусаинова, 31-1",
       addressCountry: "KZ",
     },
-    telephone: "+7-710-63-1-23-45",
+    telephone: "+7-710-63-7-49-62",
     openingHours: ["Mo-Fr 09:00-18:00", "Sa 10:00-16:00"],
   };
 }
