@@ -68,8 +68,10 @@ async function main() {
   `);
   console.log(`Need enrichment for ${rows.length} books with real text`);
 
-  const VALID_AGES = new Set(["6-9", "10-13", "14-17", "all"]);
-  const VALID_AGE = (a) => (typeof a === "string" && VALID_AGES.has(a)) ? a : null;
+  // CHECK-constraint в БД требует строго '6-9'|'10-13'|'14-17' (без 'all').
+  // Любой другой ответ Groq — сбрасываем в null.
+  const VALID_AGES = new Set(["6-9", "10-13", "14-17"]);
+  const VALID_AGE = (a) => (typeof a === "string" && VALID_AGES.has(a.trim())) ? a.trim() : null;
 
   let ok = 0, skipped = 0, failed = 0;
   for (const b of rows) {
