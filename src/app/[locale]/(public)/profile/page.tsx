@@ -77,6 +77,14 @@ export default function ProfilePage() {
               {labels.login}
             </Button>
           </form>
+          <div className="mt-4 flex items-center justify-between text-sm text-purple-700">
+            <a href={`/${locale}/profile/register`} className="hover:underline">
+              {locale === "kk" ? "Тіркелу" : "Регистрация"}
+            </a>
+            <a href={`/${locale}/profile/recover`} className="hover:underline">
+              {locale === "kk" ? "Құпиясөзді ұмыттыңыз ба?" : "Забыли пароль?"}
+            </a>
+          </div>
         </Card>
       </div>
     );

@@ -232,7 +232,8 @@ export default async function HomePage({
                       fill
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="object-cover"
-                      priority={i === 0}
+                      priority
+                      loading="eager"
                     />
                     <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
                       <span
