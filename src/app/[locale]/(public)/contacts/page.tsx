@@ -3,7 +3,7 @@ import Card from "@/components/ui/Card";
 import { getMany } from "@/lib/db";
 
 const KEYS = [
-  "library_address", "library_address_kk",
+  "library_address_ru", "library_address_kk",
   "library_phone", "library_phone_secondary",
   "library_whatsapp", "social_whatsapp_url",
   "library_email", "library_hours",
@@ -38,7 +38,7 @@ export default async function ContactsPage({
   const c = await getContacts();
   const kk = validLocale === "kk";
 
-  const address = (kk ? c.library_address_kk : c.library_address) || c.library_address || c.library_address_kk;
+  const address = (kk ? c.library_address_kk : c.library_address_ru) || c.library_address_ru || c.library_address_kk;
   const whatsappTel = (c.library_whatsapp || "").replace(/[^\d+]/g, "");
   const whatsappLink = c.social_whatsapp_url || (whatsappTel ? `https://wa.me/${whatsappTel.replace(/\D/g, "")}` : null);
 

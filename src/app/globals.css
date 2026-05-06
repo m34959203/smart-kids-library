@@ -253,6 +253,15 @@ html[data-a11y-dyslexic="true"] h3 {
   font-family: inherit;
 }
 
+/* SmartSearch выставляет body[data-search-active="1"], когда отображает свои
+   результаты — основной SSR-блок "Из коллекции" в этот момент скрываем,
+   чтобы пользователь не видел дублированный набор книг под результатами поиска. */
+body[data-search-active="1"] [data-collection] { display: none; }
+
+/* SVG из /api/coloring не имеет width/height (только viewBox).
+   Без этого правила браузер рендерит svg как 0×0 или 300×150. */
+[data-coloring] svg { width: 100%; height: 100%; display: block; }
+
 /* Motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -42,13 +42,19 @@ export default async function EventsPage({
   const kk = validLocale === "kk";
 
   const rows = await loadEvents();
+  // pg-driver возвращает TIMESTAMPTZ как Date object. Нужно явно
+  // сериализовать в ISO-строку, иначе в client-component Calendar
+  // упадёт `e.date.startsWith is not a function` (Date object не имеет
+  // startsWith). RSC props НЕ всегда сериализуются для cousin-client-компонентов.
+  const toIso = (d: unknown): string =>
+    d instanceof Date ? d.toISOString() : (typeof d === "string" ? d : "");
   const events = rows.map((r) => ({
     id: r.id,
     title: (kk ? r.title_kk : r.title_ru) || r.title_ru || r.title_kk || "",
     description: (kk ? r.description_kk : r.description_ru) || r.description_ru || r.description_kk || "",
     event_type: r.event_type,
-    start_date: r.start_date,
-    end_date: r.end_date ?? undefined,
+    start_date: toIso(r.start_date),
+    end_date: r.end_date ? toIso(r.end_date) : undefined,
     location: r.location ?? "",
     age_group: r.age_group ?? "all",
   }));

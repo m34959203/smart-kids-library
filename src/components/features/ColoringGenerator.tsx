@@ -198,8 +198,13 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {svgs.map((svg, i) => (
               <Card key={i} className="p-4 text-center">
+                {/* SVG из Gemini не содержит width/height — только viewBox.
+                    data-coloring + правило в globals.css растягивают svg
+                    на полную ширину контейнера и сохраняют aspect-ratio. */}
                 <div
-                  className="inline-block max-w-full"
+                  data-coloring
+                  className="w-full"
+                  style={{ aspectRatio: "1 / 1" }}
                   dangerouslySetInnerHTML={{ __html: svg }}
                 />
                 <div className="mt-3">
