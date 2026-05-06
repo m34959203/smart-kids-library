@@ -167,3 +167,125 @@ export async function dispatchChat(
 }
 
 export { AIRateLimitError } from "./groq";
+
+/* -------------------------------------------------------------------------- */
+/*  dispatchText / dispatchJSON — для не-чатовых endpoints (stories, quizzes,  */
+/*  coloring, translate, etc). Те же правила: Groq первый, Gemini fallback.    */
+/* -------------------------------------------------------------------------- */
+
+import { groqChat as _groqChat, GROQ_MODELS as _GROQ_MODELS } from "./groq";
+// Импортируем именно direct-модуль (без dispatch-логики) чтобы избежать
+// циклической зависимости gemini → dispatch → gemini.
+import { generateText as _generateText, generateJSON as _generateJSON } from "../gemini-direct";
+
+export interface TextOptions {
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
+  purpose: string;
+  userId?: number | null;
+}
+
+export async function dispatchText(prompt: string, opts: TextOptions): Promise<DispatchResult> {
+  if (useGroqFirst()) {
+    try {
+      const messages: GroqMessage[] = opts.systemPrompt
+        ? [{ role: "system", content: opts.systemPrompt }, { role: "user", content: prompt }]
+        : [{ role: "user", content: prompt }];
+      const startedAt = Date.now();
+      const res = await _groqChat({
+        messages,
+        model: _GROQ_MODELS.text,
+        temperature: opts.temperature,
+        maxTokens: opts.maxTokens,
+      });
+      const promptTok = res.usage?.prompt_tokens ?? approxTokens(messages.map(m => m.content).join("\n"));
+      const complTok = res.usage?.completion_tokens ?? approxTokens(res.content);
+      await logGeneration({
+        provider: "groq", model: _GROQ_MODELS.text, purpose: opts.purpose,
+        promptTokens: promptTok, completionTokens: complTok,
+        durationMs: Date.now() - startedAt, userId: opts.userId ?? null,
+      });
+      return {
+        content: res.content, provider: "groq", model: _GROQ_MODELS.text,
+        tokensUsed: res.usage?.total_tokens ?? promptTok + complTok,
+      };
+    } catch (err) {
+      if (err instanceof AIRateLimitError && hasGeminiFallback()) {
+        console.warn("[dispatch.text] Groq rate-limited, falling back to Gemini");
+      } else {
+        if (!(err instanceof AIRateLimitError)) throw err;
+        if (!hasGeminiFallback()) throw err;
+      }
+    }
+  }
+  // Gemini path
+  if (!hasGeminiFallback()) {
+    throw new Error("No LLM available: GROQ_API_KEY missing/limited and GEMINI_API_KEY not set");
+  }
+  const r = await _generateText(prompt, {
+    systemPrompt: opts.systemPrompt, temperature: opts.temperature,
+    maxTokens: opts.maxTokens, endpoint: opts.purpose,
+  });
+  return {
+    content: r.text, provider: "gemini", model: "gemini-2.5-flash",
+    tokensUsed: r.tokensUsed,
+  };
+}
+
+export interface JsonOptions {
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
+  purpose: string;
+  userId?: number | null;
+}
+
+export async function dispatchJSON<T = unknown>(prompt: string, opts: JsonOptions): Promise<{ data: T; provider: Provider; tokensUsed: number }> {
+  if (useGroqFirst()) {
+    try {
+      const messages: GroqMessage[] = [
+        { role: "system", content: (opts.systemPrompt ?? "") + "\n\nReturn STRICT JSON, no prose." },
+        { role: "user", content: prompt },
+      ];
+      const startedAt = Date.now();
+      // openai/gpt-oss-120b на Groq поддерживает json_object response_format
+      const res = await _groqChat({
+        messages,
+        model: _GROQ_MODELS.json,
+        temperature: opts.temperature ?? 0.3,
+        maxTokens: opts.maxTokens ?? 4096,
+        responseFormat: { type: "json_object" },
+      });
+      const promptTok = res.usage?.prompt_tokens ?? approxTokens(messages.map(m => m.content).join("\n"));
+      const complTok = res.usage?.completion_tokens ?? approxTokens(res.content);
+      await logGeneration({
+        provider: "groq", model: _GROQ_MODELS.json, purpose: opts.purpose,
+        promptTokens: promptTok, completionTokens: complTok,
+        durationMs: Date.now() - startedAt, userId: opts.userId ?? null,
+      });
+      const cleaned = res.content.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      try {
+        return {
+          data: JSON.parse(cleaned) as T,
+          provider: "groq",
+          tokensUsed: res.usage?.total_tokens ?? promptTok + complTok,
+        };
+      } catch (parseErr) {
+        console.warn("[dispatch.json] Groq JSON parse failed, raw:", cleaned.slice(0, 200));
+        if (!hasGeminiFallback()) throw parseErr;
+      }
+    } catch (err) {
+      if (err instanceof AIRateLimitError && hasGeminiFallback()) {
+        console.warn("[dispatch.json] Groq rate-limited, falling back to Gemini");
+      } else if (!hasGeminiFallback()) {
+        throw err;
+      }
+    }
+  }
+  if (!hasGeminiFallback()) {
+    throw new Error("No LLM available for JSON: GROQ_API_KEY missing/limited and GEMINI_API_KEY not set");
+  }
+  const r = await _generateJSON<T>(prompt, opts.systemPrompt);
+  return { data: r.data, provider: "gemini", tokensUsed: r.tokensUsed };
+}
