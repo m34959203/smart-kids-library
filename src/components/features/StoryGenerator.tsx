@@ -28,6 +28,7 @@ export default function StoryGenerator({ locale }: StoryGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [story, setStory] = useState<GeneratedStory | null>(null);
   const [storyHistory, setStoryHistory] = useState<string[]>([]);
+  const [rateLimit, setRateLimit] = useState<{ message: string; retryHuman?: string; hint?: string } | null>(null);
 
   const labels = locale === "kk"
     ? {
@@ -64,6 +65,7 @@ export default function StoryGenerator({ locale }: StoryGeneratorProps) {
 
   const generate = async (continuation?: string) => {
     setLoading(true);
+    setRateLimit(null);
     try {
       const response = await fetch("/api/stories/generate", {
         method: "POST",
@@ -79,7 +81,9 @@ export default function StoryGenerator({ locale }: StoryGeneratorProps) {
         }),
       });
       const data = await response.json();
-      if (data.story) {
+      if (response.status === 429 && data.source === "rate_limit") {
+        setRateLimit({ message: data.error, retryHuman: data.retryHuman, hint: data.hint });
+      } else if (data.story) {
         setStory(data.story);
         setStoryHistory((prev) => [...prev, data.story.content]);
       }
@@ -166,6 +170,12 @@ export default function StoryGenerator({ locale }: StoryGeneratorProps) {
             </div>
           </div>
 
+          {rateLimit && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-3 text-sm text-amber-900">
+              <div className="font-semibold">{rateLimit.message}</div>
+              {rateLimit.hint && <div className="mt-1 text-amber-800/80">{rateLimit.hint}</div>}
+            </div>
+          )}
           <Button onClick={() => generate()} loading={loading} size="lg" className="w-full">
             {loading ? labels.generating : labels.generate}
           </Button>

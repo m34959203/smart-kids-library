@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";

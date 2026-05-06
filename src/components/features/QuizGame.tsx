@@ -25,6 +25,7 @@ export default function QuizGame({ locale }: QuizGameProps) {
   const [finished, setFinished] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [rateLimit, setRateLimit] = useState<{ message: string; retryHuman?: string; hint?: string } | null>(null);
 
   const labels = locale === "kk"
     ? { title: "Әдеби викторина", start: "Бастау", easy: "Оңай", medium: "Орташа", hard: "Қиын", question: "Сұрақ", score: "Ұпай", correct: "Дұрыс!", incorrect: "Дұрыс емес!", next: "Келесі", results: "Нәтижелер", tryAgain: "Қайта байқап көру", of: "ішінен" }
@@ -33,6 +34,7 @@ export default function QuizGame({ locale }: QuizGameProps) {
   const startQuiz = async (diff: "easy" | "medium" | "hard") => {
     setDifficulty(diff);
     setLoading(true);
+    setRateLimit(null);
     try {
       const response = await fetch("/api/quizzes", {
         method: "POST",
@@ -40,7 +42,9 @@ export default function QuizGame({ locale }: QuizGameProps) {
         body: JSON.stringify({ difficulty: diff, language: locale, count: 5 }),
       });
       const data = await response.json();
-      if (data.questions) {
+      if (response.status === 429 && data.source === "rate_limit") {
+        setRateLimit({ message: data.error, retryHuman: data.retryHuman, hint: data.hint });
+      } else if (data.questions) {
         setQuestions(data.questions);
         setCurrentQ(0);
         setScore(0);
@@ -83,10 +87,22 @@ export default function QuizGame({ locale }: QuizGameProps) {
   };
 
   // Select difficulty
-  if (!difficulty) {
+  if (!difficulty || rateLimit) {
     return (
       <div className="max-w-md mx-auto space-y-6 text-center">
         <h2 className="text-2xl font-bold text-purple-900">{labels.title}</h2>
+        {rateLimit && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 text-left">
+            <div className="font-semibold">{rateLimit.message}</div>
+            {rateLimit.hint && <div className="mt-1 text-amber-800/80">{rateLimit.hint}</div>}
+            <button
+              onClick={() => { setRateLimit(null); setDifficulty(null); }}
+              className="mt-2 text-amber-700 underline text-xs"
+            >
+              {locale === "kk" ? "Жабу" : "Закрыть"}
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3">
           {(["easy", "medium", "hard"] as const).map((d) => (
             <button

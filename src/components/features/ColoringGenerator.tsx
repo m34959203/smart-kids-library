@@ -13,6 +13,7 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [svgs, setSvgs] = useState<string[]>([]);
+  const [rateLimit, setRateLimit] = useState<{ message: string; hint?: string } | null>(null);
 
   const labels = locale === "kk"
     ? {
@@ -47,6 +48,7 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
     if (!theme.trim()) return;
     setLoading(true);
     setSvgs([]);
+    setRateLimit(null);
     try {
       // 5 раскрасок параллельно (ТЗ: «5 контурных иллюстраций → PDF»)
       const variants = ["main", "side", "scene", "close-up", "playful"];
@@ -56,12 +58,22 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ theme: `${theme} (${variant})`, language: locale }),
-          }).then((r) => r.json()),
+          }).then(async (r) => ({ status: r.status, body: await r.json() })),
         ),
       );
+
+      // Если все 5 попыток упёрлись в один и тот же rate-limit — показать сообщение
+      const rl = results.find((r) =>
+        r.status === "fulfilled" && r.value.status === 429 && r.value.body?.source === "rate_limit"
+      ) as PromiseFulfilledResult<{ status: number; body: { error: string; hint?: string } }> | undefined;
+      if (rl) {
+        setRateLimit({ message: rl.value.body.error, hint: rl.value.body.hint });
+      }
+
       const out = results
-        .filter((r): r is PromiseFulfilledResult<{ svg?: string }> => r.status === "fulfilled" && Boolean(r.value?.svg))
-        .map((r) => r.value.svg as string);
+        .filter((r): r is PromiseFulfilledResult<{ status: number; body: { svg?: string } }> =>
+          r.status === "fulfilled" && Boolean(r.value.body?.svg))
+        .map((r) => r.value.body.svg as string);
       setSvgs(out);
     } finally {
       setLoading(false);
@@ -168,6 +180,13 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
           {loading ? labels.generating : labels.generate}
         </Button>
       </div>
+
+      {rateLimit && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="font-semibold">{rateLimit.message}</div>
+          {rateLimit.hint && <div className="mt-1 text-amber-800/80">{rateLimit.hint}</div>}
+        </div>
+      )}
 
       {svgs.length > 0 && (
         <>

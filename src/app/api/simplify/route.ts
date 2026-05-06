@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json({ simplified: r.text.trim(), level, language, tokensUsed: r.tokensUsed });
   } catch (e) {
+    const q = quotaErrorResponse(e, language);
+    if (q) return q;
     console.error("simplify error", e);
     return NextResponse.json({ error: "Simplify failed" }, { status: 500 });
   }

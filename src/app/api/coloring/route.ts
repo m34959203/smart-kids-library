@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, generateJSON } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
     const svg = extractSvg(data?.svg ?? "");
     if (svg) return NextResponse.json({ svg, source: "ai" });
   } catch (error) {
+    const q = quotaErrorResponse(error, parsed.data.language ?? "ru");
+    if (q) return q;
     console.error("Coloring JSON-mode failed:", error);
   }
 
@@ -102,6 +105,8 @@ Forbidden: <text>, <image>, <foreignObject>, <script>, on*-handlers. Total ≤ 3
     if (svg) return NextResponse.json({ svg, source: "ai-retry" });
     console.error("Coloring text-mode raw output (truncated):", result.text.slice(0, 300));
   } catch (error) {
+    const q = quotaErrorResponse(error, parsed.data.language ?? "ru");
+    if (q) return q;
     console.error("Coloring text-mode failed:", error);
   }
 

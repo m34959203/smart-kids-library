@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { query } from "@/lib/db";
 import { enforceRateLimit } from "@/lib/rate-limit";
@@ -75,6 +76,8 @@ ${previousStory ? `Предыдущая часть: ${previousStory.substring(0,
 
     return NextResponse.json({ story: data });
   } catch (error) {
+    const q = quotaErrorResponse(error, language);
+    if (q) return q;
     console.error("Story generation error:", error);
     return NextResponse.json({ error: "Failed to generate story" }, { status: 500 });
   }

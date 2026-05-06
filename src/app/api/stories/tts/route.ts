@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateSpeech, parseStoryVoices, pickVoice } from "@/lib/tts";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
 
@@ -57,6 +58,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    const q = quotaErrorResponse(error, language);
+    if (q) return q;
     console.error("TTS error:", error);
     return NextResponse.json({ error: "TTS failed" }, { status: 500 });
   }

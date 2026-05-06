@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -44,6 +45,8 @@ Preserve meaning, tone, and named entities. Return ONLY the translation, no expl
     const r = await generateText(prompt, { systemPrompt, endpoint: "translate", temperature: 0.2, maxTokens: 2048 });
     return NextResponse.json({ translated: r.text.trim(), from, to, tokensUsed: r.tokensUsed });
   } catch (e) {
+    const q = quotaErrorResponse(e, to);
+    if (q) return q;
     console.error("translate error", e);
     return NextResponse.json({ error: "Translate failed" }, { status: 500 });
   }

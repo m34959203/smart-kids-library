@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { requireStaff } from "@/lib/auth-guard";
 import { readJson, v, validate } from "@/lib/validate";
@@ -63,6 +64,8 @@ export async function POST(request: NextRequest) {
     const svg = match ? match[0] : fallbackPoster(title, date, palette[style]);
     return NextResponse.json({ svg, tokensUsed: r.tokensUsed });
   } catch (e) {
+    const q = quotaErrorResponse(e, language);
+    if (q) return q;
     console.error("poster error", e);
     return NextResponse.json({ svg: fallbackPoster(title, date, palette[style]) });
   }

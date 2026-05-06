@@ -10,6 +10,8 @@
  */
 import { createHash } from "node:crypto";
 import { query, getOne } from "./db";
+import { assertQuota } from "./ai-quota";
+import { logGeneration, approxTokens } from "./ai-log";
 
 export interface TTSOptions {
   text: string;
@@ -132,6 +134,11 @@ export async function generateSpeechGeminiTTS(text: string, voice = "Aoede"): Pr
     ttsCache.set(memKey, persisted);
     return persisted;
   }
+  // Cache miss → реальный сетевой вызов: проверяем квоту (USD-cap, RPM, RPD).
+  // Бросает QuotaExceededError, ловится в /api/stories/tts/route.ts через
+  // quotaErrorResponse() → 429 с понятным телом.
+  await assertQuota(model);
+  const startedAt = Date.now();
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -157,8 +164,23 @@ export async function generateSpeechGeminiTTS(text: string, voice = "Aoede"): Pr
     if (ttsCache.size >= MEM_CACHE_MAX) ttsCache.clear();
     ttsCache.set(memKey, wav);
     await storePersistentCache(persistKey, "gemini", model, voice, text, wav, "audio/wav");
+    // TTS-billing: input = chars, output = PCM samples → используем approxTokens
+    // для prompt и длину PCM как proxy completion (24kHz×16-bit ≈ 12k токенов/сек).
+    await logGeneration({
+      provider: "gemini",
+      model,
+      purpose: "tts",
+      promptTokens: approxTokens(text),
+      completionTokens: Math.ceil(pcm.length / 4),
+      durationMs: Date.now() - startedAt,
+    });
     return wav;
-  } catch {
+  } catch (err) {
+    // QuotaExceededError должна пробрасываться вверх, чтобы /api/stories/tts
+    // мог отдать клиенту 429 с понятным телом через quotaErrorResponse.
+    if (err && typeof err === "object" && (err as { name?: string }).name === "QuotaExceededError") {
+      throw err;
+    }
     return null;
   }
 }

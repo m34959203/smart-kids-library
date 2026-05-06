@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dispatchChat } from "@/lib/llm/dispatch";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { getMany, query } from "@/lib/db";
 import { v4 as uuid } from "uuid";
@@ -150,6 +151,8 @@ export async function POST(request: NextRequest) {
       sessionId,
     });
   } catch (error) {
+    const quotaResp = quotaErrorResponse(error, language);
+    if (quotaResp) return quotaResp;
     console.error("Chatbot error:", error);
     const errorMsg = language === "kk"
       ? "Кешіріңіз, қате орын алды. Қайталап көріңіз."

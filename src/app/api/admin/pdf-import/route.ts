@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireStaff } from "@/lib/auth-guard";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { query } from "@/lib/db";
 import { generateJSON } from "@/lib/gemini";
@@ -81,7 +82,11 @@ export async function POST(request: NextRequest) {
             age_category: data.age_category,
             year: data.year,
           });
-        } catch {
+        } catch (err) {
+          // Если упёрлись в квоту — отдаём пользователю понятный 429 целиком,
+          // вместо тихого fallback (админ должен знать что AI-обогащение отключено).
+          const q = quotaErrorResponse(err, "ru");
+          if (q) return q;
           /* fallback: только базовые поля */
         }
       }

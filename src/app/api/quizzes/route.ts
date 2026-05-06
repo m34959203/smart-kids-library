@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
+import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -56,6 +57,8 @@ JSON қайтар: { "questions": [{ "question": "сұрақ мәтіні", "opt
 
     return NextResponse.json(data);
   } catch (error) {
+    const q = quotaErrorResponse(error, language);
+    if (q) return q;
     console.error("Quiz generation error:", error);
     return NextResponse.json({ error: "Failed to generate quiz" }, { status: 500 });
   }

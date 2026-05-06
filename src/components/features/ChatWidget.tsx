@@ -134,10 +134,18 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
 
       const data = await response.json();
       if (data.sessionId) setSessionId(data.sessionId);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.response ?? data.error ?? "...", source: data.source },
-      ]);
+
+      // Лимит AI: показываем понятное сообщение от сервера + подсказку
+      // (сервер уже локализован в src/lib/llm/quota-error-response.ts)
+      if (response.status === 429 && data.source === "rate_limit") {
+        const text = `${data.error}${data.hint ? "\n\n" + data.hint : ""}`;
+        setMessages((prev) => [...prev, { role: "assistant", content: text, source: "rate_limit" }]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.response ?? data.error ?? "...", source: data.source },
+        ]);
+      }
 
       // Gamification: award points for asking (silent)
       fetch("/api/gamification", {
