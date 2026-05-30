@@ -3,6 +3,7 @@ import { dispatchChat } from "@/lib/llm/dispatch";
 import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { getMany, query } from "@/lib/db";
+import { searchBooks } from "@/lib/books";
 import { v4 as uuid } from "uuid";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -119,7 +120,34 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const systemPrompt = SYSTEM_PROMPTS[mode]?.[language] ?? SYSTEM_PROMPTS.general.ru;
+    let systemPrompt = SYSTEM_PROMPTS[mode]?.[language] ?? SYSTEM_PROMPTS.general.ru;
+
+    // P1-1: заземление на реальный каталог. Без этого модель выдумывает
+    // несуществующие книги. Для general/search подмешиваем результаты FTS
+    // по `books` и запрещаем называть книги вне выдачи.
+    let groundedCount = 0;
+    if (mode === "general" || mode === "search") {
+      try {
+        const hits = await searchBooks(message, 8);
+        groundedCount = hits.length;
+        if (hits.length > 0) {
+          const list = hits
+            .map((b) => `- «${b.title}»${b.author ? ` — ${b.author}` : ""}`)
+            .join("\n");
+          systemPrompt +=
+            language === "kk"
+              ? `\n\nКАТАЛОГТАН ТАБЫЛҒАН КІТАПТАР (тек осыларды атап өт, басқасын ОЙЛАП ТАППА):\n${list}\n\nЕгер сұралған кітап тізімде болмаса — «бұл туралы дәл таппадым, /catalog бөлімінен іздеп көріңіз» деп жаз. Тізімде жоқ кітаптарды ешқашан атама.`
+              : `\n\nНАЙДЕНО В КАТАЛОГЕ (упоминай ТОЛЬКО эти книги, остальные НЕ ВЫДУМЫВАЙ):\n${list}\n\nЕсли нужной книги нет в списке — ответь «точно такой книги не нашёл, попробуйте поиск в разделе /catalog». Никогда не называй книги, которых нет в списке.`;
+        } else {
+          systemPrompt +=
+            language === "kk"
+              ? `\n\nКАТАЛОГТАН бұл сұрау бойынша ештеңе табылмады. Нақты кітап атауларын ОЙЛАП ТАППА — пайдаланушыға /catalog бөлімінен іздеуді ұсын.`
+              : `\n\nПо этому запросу в КАТАЛОГЕ ничего не найдено. НЕ ВЫДУМЫВАЙ конкретные названия книг — предложи пользователю поиск в разделе /catalog.`;
+        }
+      } catch (e) {
+        console.error("Catalog grounding failed:", e);
+      }
+    }
 
     const chatHistory = history.map((h) => ({
       role: h.role === "user" ? ("user" as const) : ("assistant" as const),
@@ -148,6 +176,7 @@ export async function POST(request: NextRequest) {
       source: "ai",
       provider: result.provider,
       model: result.model,
+      groundedCount,
       sessionId,
     });
   } catch (error) {

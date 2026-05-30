@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { fetchTtsAudio } from "@/lib/tts-client";
 
 interface Props {
   text: string;
@@ -32,31 +33,26 @@ export default function BookTTS({ text, language, label, size = "md" }: Props) {
   const play = async () => {
     if (isPlaying) return stop();
     setState("loading");
+    const res = await fetchTtsAudio(text, language, { timeoutMs: 15000, maxChars: 4000 });
+    if (!res.ok) {
+      setState("error");
+      return;
+    }
     try {
-      const r = await fetch("/api/stories/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.substring(0, 4000), language }),
-      });
-      if (!r.ok) {
-        setState("error");
-        return;
-      }
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      const audio = new Audio(res.url);
       audioRef.current = audio;
       audio.onended = () => {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(res.url);
         setState("idle");
       };
       audio.onerror = () => {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(res.url);
         setState("error");
       };
       await audio.play();
       setState("playing");
     } catch {
+      URL.revokeObjectURL(res.url);
       setState("error");
     }
   };

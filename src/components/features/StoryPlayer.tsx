@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Button from "@/components/ui/Button";
+import { fetchTtsAudio } from "@/lib/tts-client";
 
 interface StoryPlayerProps {
   text: string;
@@ -27,27 +28,26 @@ export default function StoryPlayer({ text, locale, audioUrl }: StoryPlayerProps
     }
     setLoading(true);
     setUnavailable(false);
+    const res = await fetchTtsAudio(text, locale === "kk" ? "kk" : "ru", {
+      timeoutMs: 15000,
+      maxChars: 1000,
+    });
+    if (!res.ok) {
+      setUnavailable(true);
+      setLoading(false);
+      return;
+    }
     try {
-      const r = await fetch("/api/stories/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.substring(0, 1000), language: locale }),
-      });
-      if (!r.ok) {
-        setUnavailable(true);
-        return;
-      }
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      const audio = new Audio(res.url);
       audioRef.current = audio;
       audio.onended = () => {
         setIsPlaying(false);
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(res.url);
       };
       await audio.play();
       setIsPlaying(true);
     } catch {
+      URL.revokeObjectURL(res.url);
       setUnavailable(true);
     } finally {
       setLoading(false);
