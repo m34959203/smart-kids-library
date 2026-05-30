@@ -136,12 +136,18 @@ export async function POST(request: NextRequest) {
         const FIELDS = `COALESCE(title_ru,'') || ' ' || COALESCE(title_kk,'') || ' ' ||
                         COALESCE(title,'') || ' ' || COALESCE(author,'') || ' ' ||
                         COALESCE(description,'')`;
+        // ts_rank сортирует по релевантности: книга, совпавшая по редкому
+        // терму («сатпаев»), выше совпавшей лишь по частому («книг»).
         const hits = await getMany<{ title: string; author: string | null }>(
-          `SELECT COALESCE(title_ru, title_kk, title) AS title, author
-             FROM books
-            WHERE to_tsvector('russian', ${FIELDS})
-                  @@ to_tsquery('russian',
-                       NULLIF(replace(plainto_tsquery('russian', $1)::text, ' & ', ' | '), ''))
+          `WITH q AS (
+             SELECT to_tsquery('russian',
+               NULLIF(replace(plainto_tsquery('russian', $1)::text, ' & ', ' | '), '')) AS query
+           )
+           SELECT COALESCE(title_ru, title_kk, title) AS title, author
+             FROM books, q
+            WHERE q.query IS NOT NULL
+              AND to_tsvector('russian', ${FIELDS}) @@ q.query
+            ORDER BY ts_rank(to_tsvector('russian', ${FIELDS}), q.query) DESC
             LIMIT 8`,
           [message]
         );
