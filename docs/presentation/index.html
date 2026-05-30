@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Цифровая библиотека Сәтбаев — презентация</title>
+<style>
+  :root{
+    --ink:#2a2118; --ink-soft:#5b4f42; --paper:#faf5ea; --card:#fffdf8;
+    --line:#e7ddc9; --accent:#e2622e; --accent-2:#b8842b; --green:#3f8a5c;
+    --blue:#3a6ea5; --violet:#7a5ea8;
+    --shadow:0 20px 60px -25px rgba(60,40,20,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Georgia","Times New Roman",serif;
+    background:var(--paper); color:var(--ink);
+    overflow:hidden;
+  }
+  .deck{height:100vh;width:100vw;position:relative}
+  .slide{
+    position:absolute;inset:0;display:none;
+    flex-direction:column;justify-content:center;
+    padding:5vh 7vw;opacity:0;transition:opacity .4s ease;
+    overflow-y:auto;
+  }
+  .slide.active{display:flex;opacity:1}
+  .eyebrow{
+    font-family:-apple-system,"Segoe UI",sans-serif;
+    text-transform:uppercase;letter-spacing:.22em;font-size:.72rem;
+    font-weight:600;color:var(--accent);margin-bottom:1.1rem;
+    display:flex;align-items:center;gap:.8rem;
+  }
+  .eyebrow::before{content:"";width:34px;height:1px;background:var(--accent)}
+  h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;font-weight:700;letter-spacing:-.01em}
+  h2{font-size:clamp(1.7rem,3.4vw,2.7rem);line-height:1.1;font-weight:700;margin-bottom:.4rem}
+  .lead{font-size:clamp(1.05rem,1.6vw,1.35rem);color:var(--ink-soft);line-height:1.55;max-width:60ch;margin-top:1.2rem}
+  .sub{font-family:-apple-system,"Segoe UI",sans-serif;color:var(--ink-soft);font-size:1rem;margin-top:.3rem}
+
+  /* layout helpers */
+  .split{display:grid;grid-template-columns:1fr 1.15fr;gap:4vw;align-items:center;height:100%}
+  .split.rev{grid-template-columns:1.15fr 1fr}
+  .copy{max-width:46ch}
+  .shot{
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    box-shadow:var(--shadow);background:var(--card);
+  }
+  .shot img{display:block;width:100%;height:auto}
+  .shot.frame img{max-height:72vh;object-fit:contain;object-position:top}
+
+  ul.feat{list-style:none;margin-top:1.4rem;display:flex;flex-direction:column;gap:.85rem}
+  ul.feat li{
+    font-family:-apple-system,"Segoe UI",sans-serif;font-size:1.02rem;
+    line-height:1.4;padding-left:1.8rem;position:relative;color:var(--ink-soft);
+  }
+  ul.feat li::before{
+    content:"";position:absolute;left:0;top:.5em;width:9px;height:9px;
+    border-radius:50%;background:var(--accent);
+  }
+  ul.feat li b{color:var(--ink);font-weight:600}
+
+  /* title slide */
+  .title-wrap{max-width:70ch}
+  .badges{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:2rem;font-family:-apple-system,sans-serif}
+  .badge{
+    border:1px solid var(--line);background:var(--card);border-radius:999px;
+    padding:.5rem 1.1rem;font-size:.85rem;color:var(--ink-soft);font-weight:500;
+  }
+  .badge b{color:var(--accent)}
+
+  /* grids */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2rem}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:1.4rem;margin-top:2rem}
+  .tile{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:1.4rem 1.5rem;box-shadow:0 10px 30px -22px rgba(60,40,20,.4);
+  }
+  .tile h3{font-size:1.15rem;margin-bottom:.5rem;font-weight:700;display:flex;align-items:center;gap:.6rem}
+  .tile p{font-family:-apple-system,sans-serif;font-size:.95rem;color:var(--ink-soft);line-height:1.45}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+
+  /* mobile pair */
+  .phones{display:flex;gap:1.6rem;justify-content:center;align-items:flex-start}
+  .phones .shot{max-width:230px}
+
+  /* progress + nav */
+  .hud{
+    position:fixed;bottom:0;left:0;right:0;height:54px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 7vw;font-family:-apple-system,sans-serif;
+    background:linear-gradient(to top,var(--paper),transparent);
+    z-index:10;
+  }
+  .brand{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .nav{display:flex;align-items:center;gap:1rem}
+  .nav button{
+    border:1px solid var(--line);background:var(--card);border-radius:8px;
+    width:38px;height:34px;cursor:pointer;font-size:1.1rem;color:var(--ink);
+    transition:.15s;
+  }
+  .nav button:hover{border-color:var(--accent);color:var(--accent)}
+  .counter{font-size:.85rem;color:var(--ink-soft);min-width:54px;text-align:center}
+  .bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:11;transition:width .35s ease}
+
+  .kicker-num{
+    font-family:-apple-system,sans-serif;font-size:.8rem;color:var(--accent-2);
+    font-weight:700;letter-spacing:.1em;
+  }
+  @media (max-width:820px){
+    .split,.split.rev{grid-template-columns:1fr;gap:2rem}
+    .grid3{grid-template-columns:1fr}
+    .grid2{grid-template-columns:1fr}
+    .slide{padding:7vh 7vw 12vh}
+  }
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="deck" id="deck">
+
+  <!-- 1. TITLE -->
+  <section class="slide active">
+    <div class="title-wrap">
+      <div class="eyebrow">Детско-юношеская библиотека · г. Сәтбаев</div>
+      <h1>Цифровая библиотека, которую любят дети</h1>
+      <p class="lead">Современный двуязычный портал библиотеки: каталог фонда, искусственный интеллект-помощник, голосовой диалог, генератор сказок, события и удобная панель управления для сотрудников.</p>
+      <div class="badges">
+        <span class="badge">📚 Каталог <b>943</b> материала</span>
+        <span class="badge">🌐 <b>қазақша</b> · <b>русский</b></span>
+        <span class="badge">🤖 ИИ-помощник «Кітапхан»</span>
+        <span class="badge">📱 Телефон и компьютер</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. О ПРОЕКТЕ / МИССИЯ -->
+  <section class="slide">
+    <div class="split">
+      <div class="copy">
+        <div class="eyebrow">О проекте</div>
+        <h2>Библиотека выходит в онлайн</h2>
+        <p class="lead">Не просто страница с режимом работы, а полноценная цифровая экосистема для читателей 6–17 лет, их родителей и сотрудников библиотеки.</p>
+        <ul class="feat">
+          <li><b>Для детей и подростков</b> — книги, сказки, викторины, творчество.</li>
+          <li><b>Для родителей</b> — каталог, события, безопасная среда.</li>
+          <li><b>Для библиотекарей</b> — управление всем сайтом без программиста.</li>
+        </ul>
+      </div>
+      <div class="shot frame"><img src="../screenshots/home.png" alt="Главная страница" /></div>
+    </div>
+  </section>
+
+  <!-- 3. ГЛАВНАЯ -->
+  <section class="slide">
+    <div class="split rev">
+      <div class="shot frame"><img src="../screenshots/home.png" alt="Главная страница" /></div>
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 01</div>
+        <h2>Главная страница</h2>
+        <p class="sub">Первое впечатление и навигация</p>
+        <ul class="feat">
+          <li>Тёплый, дружелюбный дизайн под детскую аудиторию.</li>
+          <li><b>Выбор возрастной группы</b>: 6–9, 10–13, 14–17 — контент под возраст.</li>
+          <li>Новые поступления и анонсы событий сразу на виду.</li>
+          <li><b>Переключение языка</b> RU ⇄ KK одним нажатием.</li>
+          <li>ИИ-помощник доступен с любой страницы.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. КАТАЛОГ -->
+  <section class="slide">
+    <div class="split">
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 02</div>
+        <h2>Каталог фонда</h2>
+        <p class="sub">943 материала с обложками</p>
+        <ul class="feat">
+          <li><b>У каждой книги — обложка</b>, даже у архивных сканов.</li>
+          <li>Поиск по названию, автору и теме.</li>
+          <li>Фильтры по разделу (краеведение и др.) и по возрасту.</li>
+          <li>Богатый фонд краеведения об Улытау и Сәтбаев.</li>
+        </ul>
+      </div>
+      <div class="shot frame"><img src="../screenshots/catalog.png" alt="Каталог книг" /></div>
+    </div>
+  </section>
+
+  <!-- 5. КАРТОЧКА КНИГИ + ЧИТАЛКА -->
+  <section class="slide">
+    <div class="split rev">
+      <div class="shot frame"><img src="../screenshots/reader.png" alt="Читалка" /></div>
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 03</div>
+        <h2>Чтение онлайн</h2>
+        <p class="sub">Книга открывается прямо в браузере</p>
+        <ul class="feat">
+          <li>Регулировка <b>размера шрифта</b> и тем: светлая / сепия / тёмная.</li>
+          <li><b>Закладки и прогресс</b> — сайт помнит, где вы остановились.</li>
+          <li>Озвучивание текста голосом.</li>
+          <li>Карточка книги: описание, аннотация, «в избранное».</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. ИИ-ПОМОЩНИК -->
+  <section class="slide">
+    <div class="split">
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 04</div>
+        <h2>ИИ-помощник «Кітапхан»</h2>
+        <p class="sub">Цифровой библиотекарь 24/7</p>
+        <ul class="feat">
+          <li>Подсказывает <b>книги из реального каталога</b> — без выдумок.</li>
+          <li>Помогает с учёбой по литературе (программа 1–11 классов).</li>
+          <li>Понимает <b>и казахский, и русский</b> автоматически.</li>
+          <li>Не сможет помочь — <b>передаст вопрос живому библиотекарю</b>.</li>
+          <li>Голосовой ввод вопроса через микрофон.</li>
+        </ul>
+      </div>
+      <div class="shot frame"><img src="../screenshots/home.png" alt="ИИ-помощник на странице" /></div>
+    </div>
+  </section>
+
+  <!-- 7. ГОЛОСОВОЙ ДИАЛОГ -->
+  <section class="slide">
+    <div class="split rev">
+      <div class="shot frame"><img src="../screenshots/live.png" alt="Голосовой помощник" /></div>
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 05</div>
+        <h2>Голосовой помощник</h2>
+        <p class="sub">Живой диалог голосом</p>
+        <ul class="feat">
+          <li>Ребёнок может <b>говорить вслух</b> — помощник отвечает голосом.</li>
+          <li>Удобно для самых маленьких, кто ещё не печатает.</li>
+          <li>Поддержка казахского и русского.</li>
+          <li>Доступно с телефона и компьютера.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. ДЕТСКИЙ РАЗДЕЛ -->
+  <section class="slide">
+    <div class="copy" style="max-width:none">
+      <div class="kicker-num">ФУНКЦИЯ 06</div>
+      <h2>Детский раздел — творчество и обучение</h2>
+      <p class="sub">Не только читать, но и создавать</p>
+    </div>
+    <div class="grid2">
+      <div class="tile">
+        <h3><span class="dot" style="background:var(--accent)"></span>Генератор сказок</h3>
+        <p>Персональная сказка с именем ребёнка, темой и героем. Можно послушать озвучку и выбрать, «что будет дальше».</p>
+      </div>
+      <div class="tile">
+        <h3><span class="dot" style="background:var(--blue)"></span>Викторины</h3>
+        <p>Вопросы по книгам и общим знаниям — игровая проверка эрудиции.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="dot" style="background:var(--green)"></span>Мастерская</h3>
+        <p>Творческие задания, которые развивают воображение и навыки.</p>
+      </div>
+      <div class="tile">
+        <h3><span class="dot" style="background:var(--violet)"></span>Раскраски</h3>
+        <p>Картинки для раскрашивания с сохранением в PDF для печати.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. СКАЗКИ скрин -->
+  <section class="slide">
+    <div class="split rev">
+      <div class="shot frame"><img src="../screenshots/stories.png" alt="Генератор сказок" /></div>
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 06 ·  деталь</div>
+        <h2>Генератор сказок</h2>
+        <p class="sub">Каждая сказка уникальна</p>
+        <ul class="feat">
+          <li>Имя, тема, персонаж, возраст — и сказка готова.</li>
+          <li><b>Интерактивный сюжет</b>: ребёнок выбирает развитие истории.</li>
+          <li>Озвучивание разными голосами.</li>
+          <li>Сказку можно сохранить и перечитать.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. СОБЫТИЯ -->
+  <section class="slide">
+    <div class="split">
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 07</div>
+        <h2>Афиша событий</h2>
+        <p class="sub">Мероприятия библиотеки в удобном календаре</p>
+        <ul class="feat">
+          <li>Календарь с отметками дней, где есть события.</li>
+          <li>Фильтры по типу (мастер-класс, встреча, конкурс, выставка) и возрасту.</li>
+          <li>Карточка события: дата, время, место, описание.</li>
+          <li><b>Прошедшие события</b> помечаются автоматически.</li>
+        </ul>
+      </div>
+      <div class="shot frame"><img src="../screenshots/events.png" alt="Календарь событий" /></div>
+    </div>
+  </section>
+
+  <!-- 11. ЛИЧНЫЙ КАБИНЕТ -->
+  <section class="slide">
+    <div class="split rev">
+      <div class="shot frame"><img src="../screenshots/register.png" alt="Регистрация" /></div>
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 08</div>
+        <h2>Личный кабинет читателя</h2>
+        <p class="sub">Регистрация и персональный профиль</p>
+        <ul class="feat">
+          <li>Простая регистрация и восстановление пароля.</li>
+          <li>Сохранение <b>прогресса чтения и закладок</b>.</li>
+          <li><b>Геймификация</b>: баллы, достижения, серия дней, таблица лидеров.</li>
+          <li>Избранные книги под рукой.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. МОБИЛЬНАЯ ВЕРСИЯ -->
+  <section class="slide">
+    <div class="copy" style="max-width:none;text-align:center;align-items:center">
+      <div class="kicker-num">ФУНКЦИЯ 09</div>
+      <h2>Удобно с любого устройства</h2>
+      <p class="sub" style="margin-bottom:1.4rem">Большинство читателей заходят с телефона — сайт создан для этого</p>
+    </div>
+    <div class="phones">
+      <div class="shot"><img src="../screenshots/home-mobile.png" alt="Главная на телефоне" /></div>
+      <div class="shot"><img src="../screenshots/kids-mobile.png" alt="Детям на телефоне" /></div>
+      <div class="shot"><img src="../screenshots/events-mobile.png" alt="События на телефоне" /></div>
+    </div>
+  </section>
+
+  <!-- 13. АДМИНКА вступление -->
+  <section class="slide">
+    <div class="split">
+      <div class="copy">
+        <div class="kicker-num">ФУНКЦИЯ 10</div>
+        <h2>Панель управления</h2>
+        <p class="sub">Библиотекарь управляет сайтом сам — без программиста</p>
+        <ul class="feat">
+          <li>Наглядная сводка: книги, посещения, активность ИИ.</li>
+          <li>Все разделы сайта редактируются через простой интерфейс.</li>
+          <li>Двуязычное наполнение (RU/KK) в одном месте.</li>
+          <li>Разграничение прав: администратор и библиотекарь.</li>
+        </ul>
+      </div>
+      <div class="shot frame"><img src="../screenshots/admin-dashboard.png" alt="Панель управления" /></div>
+    </div>
+  </section>
+
+  <!-- 14. АДМИНКА возможности грид -->
+  <section class="slide">
+    <div class="copy" style="max-width:none">
+      <div class="kicker-num">ФУНКЦИЯ 10 · возможности</div>
+      <h2>Что может администратор</h2>
+    </div>
+    <div class="grid3">
+      <div class="tile"><h3><span class="dot" style="background:var(--blue)"></span>Каталог</h3><p>Добавление и редактирование книг, загрузка файлов и обложек.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--accent)"></span>События</h3><p>Создание мероприятий с датами, местом и возрастом.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--green)"></span>Новости</h3><p>Публикации с изображениями и видео.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--violet)"></span>Страницы и меню</h3><p>Редактирование текстов и структуры сайта.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--accent-2)"></span>База знаний ИИ</h3><p>Настройка ответов помощника и безопасных тем.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--blue)"></span>Аналитика</h3><p>Посещения, популярные книги, активность ИИ.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--green)"></span>Модерация</h3><p>Проверка контента для детей перед публикацией.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--violet)"></span>Соцсети</h3><p>Анонсы в Instagram и Telegram, автопостинг событий.</p></div>
+      <div class="tile"><h3><span class="dot" style="background:var(--accent)"></span>Безопасность</h3><p>Роли доступа и журнал действий.</p></div>
+    </div>
+  </section>
+
+  <!-- 15. АДМИНКА скрины -->
+  <section class="slide">
+    <div class="copy" style="max-width:none">
+      <div class="kicker-num">ФУНКЦИЯ 10 · интерфейс</div>
+      <h2>Простой интерфейс управления</h2>
+    </div>
+    <div class="grid2" style="margin-top:1.4rem">
+      <div class="shot"><img src="../screenshots/admin-catalog.png" alt="Управление каталогом" /></div>
+      <div class="shot"><img src="../screenshots/admin-events.png" alt="Управление событиями" /></div>
+    </div>
+  </section>
+
+  <!-- 16. БЕЗОПАСНОСТЬ И ДОСТУПНОСТЬ -->
+  <section class="slide">
+    <div class="copy" style="max-width:none">
+      <div class="kicker-num">ОСОБЕННОСТИ</div>
+      <h2>Создано для детей — значит безопасно и доступно</h2>
+    </div>
+    <div class="grid3">
+      <div class="tile"><h3>🛡️ Детская безопасность</h3><p>Весь ИИ-контент проходит модерацию, запрещённые темы блокируются.</p></div>
+      <div class="tile"><h3>🌐 Два языка</h3><p>Полностью на казахском и русском, с автоопределением языка.</p></div>
+      <div class="tile"><h3>♿ Доступность</h3><p>Крупный шрифт, контрастные темы, поддержка особых потребностей.</p></div>
+      <div class="tile"><h3>📱 Работает везде</h3><p>Телефон, планшет, компьютер; можно «установить» как приложение.</p></div>
+      <div class="tile"><h3>🔎 Видимость в поиске</h3><p>Оптимизирован для Google — родители легко находят библиотеку.</p></div>
+      <div class="tile"><h3>⚡ Быстрый и надёжный</h3><p>Современная технология, мгновенные ответы, стабильная работа.</p></div>
+    </div>
+  </section>
+
+  <!-- 17. ФИНАЛ -->
+  <section class="slide">
+    <div class="title-wrap">
+      <div class="eyebrow">Готово к работе</div>
+      <h1>Библиотека в кармане у каждого читателя</h1>
+      <p class="lead">Каталог, ИИ-помощник, сказки, события и удобное управление — единая система, которая делает библиотеку Сәтбаев современной и любимой.</p>
+      <div class="badges">
+        <span class="badge">КГУ «Детско-юношеская библиотека г. Сәтбаев»</span>
+        <span class="badge">Ұлытау обл., г. Сәтбаев</span>
+      </div>
+      <p class="sub" style="margin-top:2rem">Спасибо за внимание · Рахмет!</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <span class="brand">Цифровая библиотека · Сәтбаев</span>
+  <div class="nav">
+    <button id="prev" aria-label="Назад">‹</button>
+    <span class="counter" id="counter">1 / 17</span>
+    <button id="next" aria-label="Вперёд">›</button>
+  </div>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  const counter=document.getElementById('counter');
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    counter.textContent=(i+1)+' / '+slides.length;
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    document.querySelector('.slide.active').scrollTop=0;
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')show(i+1);
+    if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);
+    if(e.key==='Home')show(0);
+    if(e.key==='End')show(slides.length-1);
+  });
+  let sx=0;
+  document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    if(dx<-50)show(i+1); if(dx>50)show(i-1);
+  },{passive:true});
+  show(0);
+</script>
+</body>
+</html>
