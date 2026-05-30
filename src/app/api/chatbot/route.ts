@@ -3,7 +3,6 @@ import { dispatchChat } from "@/lib/llm/dispatch";
 import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { getMany, query } from "@/lib/db";
-import { searchBooks } from "@/lib/books";
 import { v4 as uuid } from "uuid";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
@@ -128,7 +127,27 @@ export async function POST(request: NextRequest) {
     let groundedCount = 0;
     if (mode === "general" || mode === "search") {
       try {
-        const hits = await searchBooks(message, 8);
+        // FTS по реальному каталогу (`books`). 'simple'-конфиг + websearch
+        // покрывает ru/kk; при пустой выдаче — ILIKE по названию как fallback.
+        const ftsSql = `
+          SELECT COALESCE(title_ru, title_kk, title) AS title, author
+          FROM books
+          WHERE to_tsvector('simple',
+                  COALESCE(title_ru,'') || ' ' || COALESCE(title_kk,'') || ' ' ||
+                  COALESCE(title,'')    || ' ' || COALESCE(author,'')   || ' ' ||
+                  COALESCE(description,''))
+                @@ websearch_to_tsquery('simple', $1)
+          LIMIT 8`;
+        let hits = await getMany<{ title: string; author: string | null }>(ftsSql, [message]);
+        if (hits.length === 0) {
+          hits = await getMany<{ title: string; author: string | null }>(
+            `SELECT COALESCE(title_ru, title_kk, title) AS title, author
+             FROM books
+             WHERE COALESCE(title_ru, title_kk, title) ILIKE $1
+             LIMIT 8`,
+            [`%${message.slice(0, 60)}%`]
+          );
+        }
         groundedCount = hits.length;
         if (hits.length > 0) {
           const list = hits
