@@ -689,7 +689,9 @@
     i=Math.max(0,Math.min(total-1,i));
     setActive(i);                 // оптимистично: current обновляется сразу,
     slides[i].classList.add("in"); // чтобы быстрые нажатия не читали устаревший индекс
-    slides[i].scrollIntoView({behavior:rm?"auto":"smooth"});
+    // явный scrollTop контейнера вместо scrollIntoView — устраняет проскок
+    // соседнего слайда при scroll-snap во время smooth-анимации
+    deck.scrollTo({top:slides[i].offsetTop,behavior:rm?"auto":"smooth"});
   }
 
   /* ---- kinetic words: ease-out distributed stagger ---- */
