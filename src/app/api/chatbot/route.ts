@@ -127,27 +127,24 @@ export async function POST(request: NextRequest) {
     let groundedCount = 0;
     if (mode === "general" || mode === "search") {
       try {
-        // FTS по реальному каталогу (`books`). 'simple'-конфиг + websearch
-        // покрывает ru/kk; при пустой выдаче — ILIKE по названию как fallback.
-        const ftsSql = `
-          SELECT COALESCE(title_ru, title_kk, title) AS title, author
-          FROM books
-          WHERE to_tsvector('simple',
-                  COALESCE(title_ru,'') || ' ' || COALESCE(title_kk,'') || ' ' ||
-                  COALESCE(title,'')    || ' ' || COALESCE(author,'')   || ' ' ||
-                  COALESCE(description,''))
-                @@ websearch_to_tsquery('simple', $1)
-          LIMIT 8`;
-        let hits = await getMany<{ title: string; author: string | null }>(ftsSql, [message]);
-        if (hits.length === 0) {
-          hits = await getMany<{ title: string; author: string | null }>(
-            `SELECT COALESCE(title_ru, title_kk, title) AS title, author
+        // Вопрос — это предложение. plainto_tsquery('russian', …) стеммит
+        // русские словоформы (Сатпаева→сатпаев) и выкидывает стоп-слова, но
+        // склеивает термы через AND — по полному предложению это даёт 0.
+        // Поэтому меняем '&' → '|' (OR). NULLIF → пустой запрос (одни
+        // стоп-слова) даёт NULL и просто 0 строк, без ошибки. KK-слова
+        // матчатся по точной форме (russian-конфиг их не стеммит) — приемлемо.
+        const FIELDS = `COALESCE(title_ru,'') || ' ' || COALESCE(title_kk,'') || ' ' ||
+                        COALESCE(title,'') || ' ' || COALESCE(author,'') || ' ' ||
+                        COALESCE(description,'')`;
+        const hits = await getMany<{ title: string; author: string | null }>(
+          `SELECT COALESCE(title_ru, title_kk, title) AS title, author
              FROM books
-             WHERE COALESCE(title_ru, title_kk, title) ILIKE $1
-             LIMIT 8`,
-            [`%${message.slice(0, 60)}%`]
-          );
-        }
+            WHERE to_tsvector('russian', ${FIELDS})
+                  @@ to_tsquery('russian',
+                       NULLIF(replace(plainto_tsquery('russian', $1)::text, ' & ', ' | '), ''))
+            LIMIT 8`,
+          [message]
+        );
         groundedCount = hits.length;
         if (hits.length > 0) {
           const list = hits
