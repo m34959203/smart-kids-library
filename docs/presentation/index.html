@@ -687,6 +687,8 @@
   }
   function go(i){
     i=Math.max(0,Math.min(total-1,i));
+    setActive(i);                 // оптимистично: current обновляется сразу,
+    slides[i].classList.add("in"); // чтобы быстрые нажатия не читали устаревший индекс
     slides[i].scrollIntoView({behavior:rm?"auto":"smooth"});
   }
 
