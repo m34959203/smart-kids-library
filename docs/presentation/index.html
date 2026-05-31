@@ -337,6 +337,56 @@
     .device,.fan .phone{transform:none!important}
     .sweep{display:none}
   }
+
+  /* ============ LIGHTBOX (зум скриншотов) ============ */
+  .zoomable{cursor:zoom-in}
+  .zhost{position:relative}
+  .zbadge{
+    position:absolute;top:.6rem;right:.6rem;
+    width:32px;height:32px;border-radius:9px;
+    background:rgba(26,20,16,.62);border:1px solid var(--line);
+    color:var(--amber-soft);display:flex;align-items:center;justify-content:center;
+    font-size:1rem;line-height:1;opacity:0;transform:translateZ(90px);
+    transition:opacity .25s var(--ease);pointer-events:none;z-index:7;
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  }
+  .zhost:hover .zbadge{opacity:1}
+  @media (hover:none){.zbadge{display:none}}
+  .lb{
+    position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+    padding:clamp(1rem,5vw,4rem);background:rgba(12,9,6,.82);
+    -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+    opacity:0;visibility:hidden;cursor:zoom-out;
+    transition:opacity .3s var(--ease),visibility .3s var(--ease);
+  }
+  .lb.on{opacity:1;visibility:visible}
+  .lb figure{
+    margin:0;display:flex;flex-direction:column;gap:1.1rem;align-items:center;
+    max-width:min(1200px,92vw);max-height:88vh;
+    transform:scale(.95);transition:transform .35s var(--ease-out);
+  }
+  .lb.on figure{transform:scale(1)}
+  .lb img{
+    max-width:100%;max-height:78vh;width:auto;height:auto;object-fit:contain;
+    border-radius:10px;border:1px solid rgba(231,163,62,.18);
+    box-shadow:0 40px 110px -30px rgba(0,0,0,.85);cursor:default;
+  }
+  .lb-cap{
+    font-family:var(--display);font-style:italic;font-weight:500;color:var(--amber);
+    text-align:center;letter-spacing:.01em;font-size:clamp(1.1rem,2.6vw,1.8rem);max-width:40ch;
+  }
+  .lb-close{
+    position:fixed;top:1.1rem;right:1.3rem;width:46px;height:46px;border-radius:50%;
+    border:1px solid var(--line);background:rgba(0,0,0,.42);color:var(--ink);
+    font-size:1.35rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .2s var(--ease),color .2s var(--ease),transform .2s var(--ease);
+  }
+  .lb-close:hover{background:var(--amber);color:#1a1410;border-color:var(--amber);transform:rotate(90deg)}
+  .lb-close:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+  @media (prefers-reduced-motion: reduce){
+    .lb,.lb figure{transition:opacity .15s linear}
+    .lb-close:hover{transform:none}
+  }
 </style>
 </head>
 <body>
@@ -878,6 +928,61 @@
 
   setActive(0);
   slides[0].classList.add("in");
+})();
+</script>
+
+<div class="lb" id="lightbox" role="dialog" aria-modal="true" aria-label="Просмотр скриншота" aria-hidden="true">
+  <button type="button" class="lb-close" aria-label="Закрыть (Esc)">✕</button>
+  <figure><img alt="" /><figcaption class="lb-cap"></figcaption></figure>
+</div>
+<script>
+(function(){
+  var lb=document.getElementById("lightbox");
+  if(!lb)return;
+  var lbImg=lb.querySelector("img");
+  var lbCap=lb.querySelector(".lb-cap");
+  var closeBtn=lb.querySelector(".lb-close");
+  var lastFocus=null;
+  function cap(img){
+    var s=img.closest("[data-slide]");
+    return (s&&s.getAttribute("aria-label"))||img.getAttribute("alt")||"";
+  }
+  function open(img){
+    lastFocus=document.activeElement;
+    lbImg.src=img.currentSrc||img.src;
+    lbImg.alt=img.getAttribute("alt")||"";
+    lbCap.textContent=cap(img);
+    lb.classList.add("on");
+    lb.setAttribute("aria-hidden","false");
+    document.body.style.overflow="hidden";
+    closeBtn.focus();
+  }
+  function close(){
+    lb.classList.remove("on");
+    lb.setAttribute("aria-hidden","true");
+    document.body.style.overflow="";
+    if(lastFocus&&lastFocus.focus)lastFocus.focus();
+  }
+  var imgs=document.querySelectorAll("[data-slide] img");
+  Array.prototype.forEach.call(imgs,function(img){
+    if(img.getAttribute("aria-hidden")==="true")return; // декоративные дубли пропускаем
+    img.classList.add("zoomable");
+    var host=img.parentElement;
+    if(host){
+      host.classList.add("zhost");
+      if(!host.querySelector(".zbadge")){
+        var b=document.createElement("span");
+        b.className="zbadge";b.setAttribute("aria-hidden","true");b.textContent="⤢";
+        host.appendChild(b);
+      }
+    }
+    img.addEventListener("click",function(e){e.stopPropagation();open(img);});
+  });
+  lb.addEventListener("click",function(e){if(e.target===lb)close();});
+  closeBtn.addEventListener("click",function(e){e.stopPropagation();close();});
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"&&lb.classList.contains("on")){e.stopPropagation();close();}
+  });
 })();
 </script>
 </body>
