@@ -17,10 +17,14 @@ export function organizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Library",
+    "@id": `${base}/#library`,
     name: "Детская и юношеская библиотека г. Сатпаев",
     alternateName: "Сатпаев балалар және жасөспірімдер кітапханасы",
     url: base,
     logo: `${base}/icon-512.png`,
+    image: `${base}/opengraph-image`,
+    email: "biblioteka_15.86@mail.ru",
+    telephone: "+7-710-63-7-49-62",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Сатпаев",
@@ -28,8 +32,28 @@ export function organizationSchema() {
       streetAddress: "ул. Кусаинова, 31-1",
       addressCountry: "KZ",
     },
-    telephone: "+7-710-63-7-49-62",
+    areaServed: { "@type": "City", name: "Сатпаев" },
+    inLanguage: ["ru", "kk"],
     openingHours: ["Mo-Fr 09:00-18:00", "Sa 10:00-16:00"],
+    sameAs: [
+      "https://www.instagram.com/dub_biblioteka_/",
+      "https://www.youtube.com/channel/UCRtncPu_HdiFKcKn6If8wuQ",
+      "https://www.facebook.com/profile.php?id=100011999106038",
+    ],
+  };
+}
+
+// BreadcrumbList для внутренних страниц. items: от «Главная» к текущей.
+export function breadcrumbSchema(items: { name: string; url: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: it.url,
+    })),
   };
 }
 

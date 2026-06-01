@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { JsonLd, breadcrumbSchema } from "@/lib/jsonld";
 
 const LABELS: Record<string, { ru: string; kk: string }> = {
   catalog: { ru: "Каталог", kk: "Каталог" },
@@ -41,8 +42,19 @@ export default function Breadcrumbs() {
 
   const homeLabel = kk ? "Басты" : "Главная";
 
+  // Абсолютные URL для BreadcrumbList (NEXT_PUBLIC_APP_URL запечён на build).
+  const origin = (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "")
+  ).replace(/\/+$/, "");
+  const schemaItems = [
+    { name: homeLabel, url: `${origin}/${locale}` },
+    ...crumbs.map((c) => ({ name: c.label, url: `${origin}${c.href}` })),
+  ];
+
   return (
     <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-4 pt-4">
+      <JsonLd data={breadcrumbSchema(schemaItems)} />
       <ol className="flex flex-wrap items-center gap-1.5 text-[11px] tracking-widest uppercase font-mono" style={{ color: "var(--foreground-muted)" }}>
         <li>
           <Link href={`/${locale}`} className="hover:text-[color:var(--primary)] transition-colors">{homeLabel}</Link>
