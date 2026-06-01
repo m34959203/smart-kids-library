@@ -24,6 +24,7 @@ export function organizationSchema() {
     address: {
       "@type": "PostalAddress",
       addressLocality: "Сатпаев",
+      addressRegion: "Ұлытау облысы",
       streetAddress: "ул. Кусаинова, 31-1",
       addressCountry: "KZ",
     },

@@ -43,6 +43,8 @@ export function proxy(request: NextRequest) {
     pathname === "/favicon.ico" ||
     pathname === "/icon" ||
     pathname === "/apple-icon" ||
+    pathname === "/opengraph-image" ||
+    pathname === "/twitter-image" ||
     pathname === "/sitemap.xml" ||
     pathname === "/robots.txt" ||
     pathname === "/sw.js" ||
@@ -71,11 +73,18 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  // Прокидываем локаль и путь в server components / generateMetadata
+  // через request-заголовки — корневой layout строит из них lang,
+  // canonical, og:url, hreflang.
+  const locale = pathname.startsWith("/kk") ? "kk" : "ru";
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-locale", locale);
+  requestHeaders.set("x-url-path", pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
   matcher: [
-    "/((?!_next|api|uploads|favicon.ico|manifest.json|icon|apple-icon|sitemap.xml|robots.txt|sw.js|offline.html).*)",
+    "/((?!_next|api|uploads|favicon.ico|manifest.json|icon|apple-icon|opengraph-image|twitter-image|sitemap.xml|robots.txt|sw.js|offline.html).*)",
   ],
 };

@@ -13,6 +13,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Публичный URL запекается на build: sitemap.ts/robots.ts статически
+# пререндерятся, поэтому без этого они уходят на дефолт localhost.
+# Передаётся через --build-arg NEXT_PUBLIC_APP_URL=https://<домен>.
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 RUN npm run build
 
 # Production image, copy all the files and run next
