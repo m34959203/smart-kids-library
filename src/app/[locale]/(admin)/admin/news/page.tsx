@@ -146,7 +146,7 @@ export default function AdminNewsPage() {
       )}
 
       {editing && (
-        <Modal isOpen={true} onClose={() => setEditing(null)} size="xl" title={editing.id ? (kk ? "Өңдеу" : "Редактировать") : (kk ? "Жаңа" : "Новая")}>
+        <Modal isOpen={true} onClose={() => setEditing(null)} size="2xl" title={editing.id ? (kk ? "Өңдеу" : "Редактировать") : (kk ? "Жаңа" : "Новая")}>
           <div className="space-y-3">
             <Input label="Title (RU)" value={editing.title_ru ?? ""} onChange={(e) => setEditing({ ...editing, title_ru: e.target.value })} />
             <div>
@@ -162,14 +162,14 @@ export default function AdminNewsPage() {
             </div>
             <div>
               <label className="text-sm text-gray-600 block mb-1">Content (RU)</label>
-              <RichTextEditor
+              <RichTextEditor minHeight="220px"
                 value={editing.content_ru ?? ""}
                 onChange={(html) => setEditing({ ...editing, content_ru: html })}
               />
             </div>
             <div>
               <label className="text-sm text-gray-600 block mb-1">Content (KK)</label>
-              <RichTextEditor
+              <RichTextEditor minHeight="220px"
                 value={editing.content_kk ?? ""}
                 onChange={(html) => setEditing({ ...editing, content_kk: html })}
               />

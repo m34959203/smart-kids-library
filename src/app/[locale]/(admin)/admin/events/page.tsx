@@ -144,13 +144,13 @@ export default function AdminEventsPage() {
       )}
 
       {editing && (
-        <Modal isOpen={true} onClose={() => { setEditing(null); setPosterSvg(null); }} size="xl" title={editing.id ? (kk ? "Өңдеу" : "Редактировать") : (kk ? "Жаңа оқиға" : "Новое событие")}>
+        <Modal isOpen={true} onClose={() => { setEditing(null); setPosterSvg(null); }} size="2xl" title={editing.id ? (kk ? "Өңдеу" : "Редактировать") : (kk ? "Жаңа оқиға" : "Новое событие")}>
           <div className="space-y-3">
             <Input label="Title (RU)" value={editing.title_ru ?? ""} onChange={(e) => setEditing({ ...editing, title_ru: e.target.value })} />
             <Input label="Title (KK)" value={editing.title_kk ?? ""} onChange={(e) => setEditing({ ...editing, title_kk: e.target.value })} />
             <div>
               <label className="text-sm text-gray-600 block mb-1">Description (RU)</label>
-              <RichTextEditor value={editing.description_ru ?? ""} onChange={(html) => setEditing({ ...editing, description_ru: html })} />
+              <RichTextEditor minHeight="220px" value={editing.description_ru ?? ""} onChange={(html) => setEditing({ ...editing, description_ru: html })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

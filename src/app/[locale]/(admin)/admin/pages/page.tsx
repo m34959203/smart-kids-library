@@ -142,18 +142,18 @@ export default function AdminPagesPage() {
       </Card>
 
       {showModal && (
-        <Modal isOpen onClose={() => setShowModal(false)} title={form.id ? "Редактировать страницу" : "Новая страница"}>
+        <Modal isOpen size="2xl" onClose={() => setShowModal(false)} title={form.id ? "Редактировать страницу" : "Новая страница"}>
           <div className="space-y-3">
             <Field label="Slug" value={form.slug} onChange={(v) => setForm({ ...form, slug: v })} mono />
             <Field label="Заголовок (RU)" value={form.title_ru} onChange={(v) => setForm({ ...form, title_ru: v })} />
             <Field label="Заголовок (KK)" value={form.title_kk} onChange={(v) => setForm({ ...form, title_kk: v })} />
             <div>
               <label className="text-sm text-gray-600 block mb-1">Контент (RU)</label>
-              <RichTextEditor value={form.content_ru} onChange={(v) => setForm({ ...form, content_ru: v })} />
+              <RichTextEditor minHeight="220px" value={form.content_ru} onChange={(v) => setForm({ ...form, content_ru: v })} />
             </div>
             <div>
               <label className="text-sm text-gray-600 block mb-1">Контент (KK)</label>
-              <RichTextEditor value={form.content_kk} onChange={(v) => setForm({ ...form, content_kk: v })} />
+              <RichTextEditor minHeight="220px" value={form.content_kk} onChange={(v) => setForm({ ...form, content_kk: v })} />
             </div>
             <Field label="Meta description (RU)" value={form.meta_description_ru} onChange={(v) => setForm({ ...form, meta_description_ru: v })} />
             <Field label="Meta description (KK)" value={form.meta_description_kk} onChange={(v) => setForm({ ...form, meta_description_kk: v })} />
