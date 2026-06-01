@@ -91,6 +91,21 @@ export default function ProfilePage() {
   }
 
   const user = session?.user as { name?: string; email?: string; role?: string } | undefined;
+  const isAdmin = !!user?.role && ["admin", "editor", "librarian"].includes(user.role);
+
+  // Админ/редактор/библиотекарь видят не читательский профиль, а панель управления.
+  const adminLinks: Array<{ href: string; ru: string; kk: string; icon: string }> = [
+    { href: `/${locale}/admin`, ru: "Дашборд", kk: "Бақылау тақтасы", icon: "📊" },
+    { href: `/${locale}/admin/news`, ru: "Новости", kk: "Жаңалықтар", icon: "📰" },
+    { href: `/${locale}/admin/events`, ru: "События", kk: "Іс-шаралар", icon: "📅" },
+    { href: `/${locale}/admin/pages`, ru: "Страницы", kk: "Беттер", icon: "📄" },
+    { href: `/${locale}/admin/catalog`, ru: "Каталог", kk: "Каталог", icon: "📚" },
+    { href: `/${locale}/admin/knowledge`, ru: "База знаний ИИ", kk: "ЖИ білім қоры", icon: "🤖" },
+    { href: `/${locale}/admin/menu`, ru: "Меню", kk: "Мәзір", icon: "🧭" },
+    { href: `/${locale}/admin/moderation`, ru: "Модерация", kk: "Модерация", icon: "🛡️" },
+    { href: `/${locale}/admin/social`, ru: "SMM", kk: "SMM", icon: "📣" },
+    { href: `/${locale}/admin/analytics`, ru: "Аналитика", kk: "Талдау", icon: "📈" },
+  ];
 
   const tabs = [
     {
@@ -161,7 +176,30 @@ export default function ProfilePage() {
           </Button>
         </div>
       </Card>
-      <Tabs tabs={tabs} />
+
+      {isAdmin ? (
+        <div>
+          <h2 className="text-lg font-bold text-purple-900 mb-3">
+            {locale === "kk" ? "Басқару панелі" : "Панель управления"}
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {adminLinks.map((a) => (
+              <a
+                key={a.href}
+                href={a.href}
+                className="group flex flex-col gap-2 rounded-2xl border border-purple-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-purple-300"
+              >
+                <span className="text-2xl" aria-hidden>{a.icon}</span>
+                <span className="text-sm font-semibold text-purple-900 group-hover:text-purple-700">
+                  {locale === "kk" ? a.kk : a.ru}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Tabs tabs={tabs} />
+      )}
     </div>
   );
 }
