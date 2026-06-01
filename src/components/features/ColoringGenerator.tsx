@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import { useAgeProfile } from "@/lib/age-profile";
 
 interface ColoringGeneratorProps {
   locale: string;
@@ -14,6 +15,7 @@ interface ColoringResult {
 }
 
 export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
+  const { ageGroup } = useAgeProfile();
   const [theme, setTheme] = useState("");
   const [loading, setLoading] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -58,7 +60,7 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
       const r = await fetch("/api/coloring", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme, language: locale }),
+        body: JSON.stringify({ theme, language: locale, ageGroup: ageGroup ?? undefined }),
       });
       const body = await r.json();
       if (r.status === 429 && body?.source === "rate_limit") {
@@ -154,6 +156,20 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
           {loading ? labels.generating : labels.generate}
         </Button>
       </div>
+
+      {ageGroup ? (
+        <p className="text-center text-sm text-purple-600">
+          {locale === "kk"
+            ? `Күрделілік ${ageGroup} жасқа бейімделген`
+            : `Сложность подобрана под возраст ${ageGroup}`}
+        </p>
+      ) : (
+        <p className="text-center text-xs text-gray-400">
+          {locale === "kk"
+            ? "Жоғарыда жас тобын таңдаңыз — күрделілік соған бейімделеді"
+            : "Выберите возраст вверху — сложность подстроится под него"}
+        </p>
+      )}
 
       {rateLimit && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">

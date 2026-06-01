@@ -11,7 +11,24 @@ import { logGeneration } from "@/lib/ai-log";
 const schema = v.object({
   theme: v.string({ min: 1, max: 200 }),
   language: v.optional(v.enum(["ru", "kk"] as const)),
+  ageGroup: v.optional(v.enum(["6-9", "10-13", "14-17"] as const)),
 });
+
+// Сложность контура под возраст: младшим — крупно/просто, старшим — детальнее.
+const AGE_STYLE: Record<string, { imagen: string; svg: string }> = {
+  "6-9": {
+    imagen: "very simple design for young children (ages 6-9): extra thick bold outlines, very large open areas to color, minimal details, few big shapes, no fine patterns",
+    svg: "очень простой контур для 6-9 лет: толстые крупные линии (stroke-width 4-5), большие области, минимум деталей",
+  },
+  "10-13": {
+    imagen: "moderate complexity for children (ages 10-13): clean medium-weight outlines, a balanced amount of detail, some background elements",
+    svg: "средняя сложность для 10-13 лет: линии stroke-width 2-3, умеренная детализация, немного фона",
+  },
+  "14-17": {
+    imagen: "intricate detailed design for teens (ages 14-17): fine clean linework, rich details and decorative patterns, more elaborate composition, still pure outline only",
+    svg: "высокая детализация для 14-17 лет: тонкие линии (stroke-width 1.5-2), узоры и детали, более сложная композиция",
+  },
+};
 
 function escapeXml(s: string): string {
   return s
@@ -62,11 +79,12 @@ export async function POST(request: NextRequest) {
   const blocked = enforceRateLimit(request, { bucket: "coloring", max: 10, windowMs: 60_000 });
   if (blocked) return blocked;
 
-  const parsed = validate<{ theme: string; language?: "ru" | "kk" }>(await readJson(request), schema);
+  const parsed = validate<{ theme: string; language?: "ru" | "kk"; ageGroup?: "6-9" | "10-13" | "14-17" }>(await readJson(request), schema);
   if (!parsed.ok) {
     return NextResponse.json({ error: "Invalid body", issues: parsed.issues }, { status: 400 });
   }
-  const { theme } = parsed.data;
+  const { theme, ageGroup } = parsed.data;
+  const ageStyle = ageGroup ? AGE_STYLE[ageGroup] : null;
 
   const withinLimit = await isWithinTokenLimit();
   if (!withinLimit) {
@@ -79,7 +97,20 @@ export async function POST(request: NextRequest) {
     try {
       await assertQuota(imgModel);
       const startedAt = Date.now();
-      const prompt = `Black and white line art coloring page for children. Subject: ${theme}. Bold clean black outlines on a pure white background, no shading, no gray, no color fill, simple friendly cartoon style with large areas easy to color. Centered composition, full subject visible.`;
+      // Imagen англо-центричен и игнорирует кириллицу (тема «Бабочка» → случайный объект).
+      // Переводим тему в короткое английское существительное (Groq, $0, Groq-first).
+      let subject = theme;
+      if ([...theme].some((c) => c.charCodeAt(0) > 127)) {
+        try {
+          const tr = await generateText(
+            `Translate this subject into a short English noun phrase for an image generator. Output ONLY the phrase, nothing else: "${theme}"`,
+            { temperature: 0, maxTokens: 30, endpoint: "coloring-translate" },
+          );
+          const cleaned = tr.text.trim().replace(/^["'\s]+|["'.\s]+$/g, "").split("\n")[0];
+          if (cleaned && /[a-z]/i.test(cleaned) && cleaned.length <= 60) subject = cleaned;
+        } catch { /* оставляем исходную тему */ }
+      }
+      const prompt = `Black and white line art coloring page for children. Subject: ${subject}. ${ageStyle ? ageStyle.imagen + ". " : "Simple friendly cartoon style with large areas easy to color. "}Bold clean black outlines on a pure white background, no shading, no gray, no color fill. Centered composition, full subject clearly visible and recognizable.`;
       const negativePrompt = "color, colour, shading, grayscale, gradient, photo, realistic, text, watermark, blurry, complex background";
       const image = await vertexGenerateImage(prompt, { aspectRatio: "1:1", negativePrompt });
       if (image) {
@@ -97,7 +128,7 @@ export async function POST(request: NextRequest) {
   // голый текст — не ставит markdown-фенсы, не вставляет «Here is...»).
   try {
     const { data } = await generateJSON<{ svg: string }>(
-      `Создай раскраску-контур для детей. Тема: "${theme}".
+      `Создай раскраску-контур для детей. Тема: "${theme}".${ageStyle ? `\nСложность: ${ageStyle.svg}.` : ""}
 Требования:
 - viewBox="0 0 400 400", xmlns="http://www.w3.org/2000/svg"
 - Outline-only line art: fill="none", stroke="#000", stroke-width 2-3
