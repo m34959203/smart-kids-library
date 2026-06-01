@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   locale: string;
@@ -38,7 +38,6 @@ function applyPrefs(p: A11yPrefs) {
 export default function AccessibilityToolbar({ locale }: Props) {
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<A11yPrefs>(DEFAULT);
-  const [reading, setReading] = useState(false);
 
   useEffect(() => {
     try {
@@ -65,50 +64,11 @@ export default function AccessibilityToolbar({ locale }: Props) {
     });
   };
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const readPage = async () => {
-    if (reading && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setReading(false);
-      return;
-    }
-    const main = document.getElementById("main");
-    if (!main) return;
-    const text = main.innerText.slice(0, 4000);
-    setReading(true);
-    try {
-      const r = await fetch("/api/stories/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, language: locale === "kk" ? "kk" : "ru" }),
-      });
-      if (!r.ok) {
-        setReading(false);
-        return;
-      }
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => {
-        setReading(false);
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-      };
-      await audio.play();
-    } catch {
-      setReading(false);
-    }
-  };
-
   const labels = {
     ru: {
       open: "Специальные возможности",
       textSize: "Размер текста",
       contrast: "Контраст",
-      read: reading ? "Остановить озвучку" : "Озвучить страницу",
       dyslexic: "Удобный для дислексии шрифт",
       reset: "Сбросить",
       sizes: { normal: "Обычный", large: "Крупный", "x-large": "Очень крупный" },
@@ -119,7 +79,6 @@ export default function AccessibilityToolbar({ locale }: Props) {
       open: "Қолжетімділік",
       textSize: "Мәтін өлшемі",
       contrast: "Контраст",
-      read: reading ? "Оқуды тоқтату" : "Бетті дауыстап оқу",
       dyslexic: "Дислексияға ыңғайлы қаріп",
       reset: "Қалпына келтіру",
       sizes: { normal: "Қалыпты", large: "Ірі", "x-large": "Өте ірі" },
@@ -198,14 +157,6 @@ export default function AccessibilityToolbar({ locale }: Props) {
             />
             <span className="text-xs">{l.dyslexic}</span>
           </label>
-
-          <button
-            type="button"
-            onClick={readPage}
-            className="w-full px-3 py-2 rounded-lg bg-purple-600 text-white font-medium text-xs mb-2 hover:bg-purple-700"
-          >
-            {l.read}
-          </button>
 
           <button
             type="button"
