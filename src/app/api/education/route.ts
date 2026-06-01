@@ -10,7 +10,8 @@ import { detectLanguage } from "@/lib/lang-detect";
 const schema = v.object({
   type: v.optional(v.enum(["workshop", "literature", "essay", "general"] as const)),
   mode: v.optional(v.enum(["poem", "story"] as const)),
-  action: v.optional(v.enum(["continue", "rhyme", "feedback"] as const)),
+  // "improve" — кнопка «Помощь ИИ» в CreativeWorkshop (синоним feedback, ловится else-веткой ниже)
+  action: v.optional(v.enum(["continue", "rhyme", "feedback", "improve"] as const)),
   text: v.optional(v.string({ max: 4000 })),
   topic: v.optional(v.string({ max: 400 })),
   grade: v.optional(v.number({ int: true, min: 1, max: 11 })),
@@ -20,7 +21,7 @@ const schema = v.object({
 interface EduBody {
   type?: "workshop" | "literature" | "essay" | "general";
   mode?: "poem" | "story";
-  action?: "continue" | "rhyme" | "feedback";
+  action?: "continue" | "rhyme" | "feedback" | "improve";
   text?: string;
   topic?: string;
   grade?: number;
