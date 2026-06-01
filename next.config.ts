@@ -27,9 +27,17 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
 
+// Уникальная метка сборки для версии Service-Worker-кеша.
+// Меняется на каждый build → activate вычищает старые кеши и вытаскивает
+// пользователей, застрявших на промежуточной (рассинхронизированной) сборке.
+const SW_VERSION = process.env.NEXT_PUBLIC_SW_VERSION || String(Date.now());
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  env: {
+    NEXT_PUBLIC_SW_VERSION: SW_VERSION,
+  },
   // Cloudflare quick tunnel-домены пропускаем для HMR в dev
   allowedDevOrigins: [
     "*.trycloudflare.com",
@@ -70,6 +78,13 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return APP_URL ? [] : [];
+  },
+  async redirects() {
+    // /ru/ai и /kk/ai вели в 404 — нет отдельной AI-страницы.
+    // Текстовый помощник — это чат-FAB, голосовой — /live. Закрываем 404 на /live.
+    return [
+      { source: "/:locale(ru|kk)/ai", destination: "/:locale/live", permanent: false },
+    ];
   },
 };
 

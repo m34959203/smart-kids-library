@@ -3,6 +3,7 @@ import { getMessages, isValidLocale, type Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import Link from "next/link";
 import Image from "next/image";
+import AiConsultantCard from "@/components/features/AiConsultantCard";
 import BookRecommendations from "@/components/features/BookRecommendations";
 import ContextualHints from "@/components/features/ContextualHints";
 import UpcomingEventsWidget from "@/components/features/UpcomingEventsWidget";
@@ -349,26 +350,36 @@ export default async function HomePage({
           ========================================================= */}
       <section className="max-w-7xl mx-auto px-4 mt-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0 border-t" style={{ borderColor: "var(--border)" }}>
-          {features.map((f, i) => (
-            <div
-              key={f.title}
-              className="p-6 md:p-8 md:border-r last:border-r-0 border-b md:border-b-0"
-              style={{ borderColor: "var(--border)" }}
-            >
+          {features.map((f, i) =>
+            i === 0 ? (
+              <AiConsultantCard
+                key={f.title}
+                index={i}
+                title={f.title}
+                text={f.text}
+                cta={kk ? "Сұрақ қою" : "Задать вопрос"}
+              />
+            ) : (
               <div
-                className="font-mono text-xs tracking-widest mb-4"
-                style={{ color: "var(--foreground-muted)" }}
+                key={f.title}
+                className="p-6 md:p-8 md:border-r last:border-r-0 border-b md:border-b-0"
+                style={{ borderColor: "var(--border)" }}
               >
-                {String(i + 1).padStart(2, "0")} / 03
+                <div
+                  className="font-mono text-xs tracking-widest mb-4"
+                  style={{ color: "var(--foreground-muted)" }}
+                >
+                  {String(i + 1).padStart(2, "0")} / 03
+                </div>
+                <h3 className="font-display text-xl md:text-2xl font-semibold mb-3 text-foreground">
+                  {f.title}
+                </h3>
+                <p className="text-sm" style={{ color: "var(--foreground-muted)", lineHeight: 1.65 }}>
+                  {f.text}
+                </p>
               </div>
-              <h3 className="font-display text-xl md:text-2xl font-semibold mb-3 text-foreground">
-                {f.title}
-              </h3>
-              <p className="text-sm" style={{ color: "var(--foreground-muted)", lineHeight: 1.65 }}>
-                {f.text}
-              </p>
-            </div>
-          ))}
+            )
+          )}
         </div>
       </section>
 

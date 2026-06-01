@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import { query, getOne } from "./db";
 import { assertQuota } from "./ai-quota";
 import { logGeneration, approxTokens } from "./ai-log";
+import { vertexEnabled, vertexGenerateContent } from "./vertex";
 
 export interface TTSOptions {
   text: string;
@@ -122,8 +123,13 @@ function parseSampleRate(mime: string, fallback = 24000): number {
 
 export async function generateSpeechGeminiTTS(text: string, voice = "Aoede"): Promise<ArrayBuffer | null> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || !text?.trim()) return null;
-  const model = process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview";
+  const useVertex = vertexEnabled();
+  if (!text?.trim()) return null;
+  if (!useVertex && !apiKey) return null;
+  // Vertex: gemini-2.5-flash-tts (проверено на $300-trial). AI-Studio: preview-модель.
+  const model = useVertex
+    ? (process.env.VERTEX_TTS_MODEL || "gemini-2.5-flash-tts")
+    : (process.env.GEMINI_TTS_MODEL || "gemini-3.1-flash-tts-preview");
   const memKey = `gemini:${voice}:${text}`;
   const cached = ttsCache.get(memKey);
   if (cached) return cached;
@@ -140,22 +146,28 @@ export async function generateSpeechGeminiTTS(text: string, voice = "Aoede"): Pr
   await assertQuota(model);
   const startedAt = Date.now();
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text }] }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
-          },
-        }),
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
+    const reqBody = {
+      contents: [{ role: "user", parts: [{ text }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
+      },
+    };
+    let data: { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string } }> } }> } | null = null;
+    if (useVertex) {
+      data = await vertexGenerateContent(model, reqBody);
+    } else {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(reqBody),
+        }
+      );
+      if (!res.ok) return null;
+      data = await res.json();
+    }
     const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
     if (!part?.data) return null;
     const mime = part.mimeType || "audio/L16;rate=24000";

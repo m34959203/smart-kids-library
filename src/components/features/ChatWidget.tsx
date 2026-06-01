@@ -81,6 +81,14 @@ export default function ChatWidget({ locale }: ChatWidgetProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Внешняя точка входа: карточка «ИИ-консультант» на главной (и др.) открывает чат
+  // через CustomEvent — чтобы у текстового помощника был явный CTA, а не только FAB.
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener("open-chat", open);
+    return () => window.removeEventListener("open-chat", open);
+  }, []);
+
   // Периодический call-to-action: первая подсказка через 8с,
   // держится 6с, повторяется каждые 28с. Останавливается когда чат открыт
   // или юзер явно закрыл подсказку.

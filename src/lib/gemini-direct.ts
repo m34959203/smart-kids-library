@@ -2,6 +2,7 @@ import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 import { trackTokenUsage } from "./token-tracker";
 import { assertQuota } from "./ai-quota";
 import { logGeneration } from "./ai-log";
+import { vertexEnabled, vertexGenerateText } from "./vertex";
 
 export { QuotaExceededError, userKeyFromRequest, assertUserQuota } from "./ai-quota";
 
@@ -58,6 +59,24 @@ export async function generateText(
 ): Promise<GeminiResponse> {
   const modelName = options?.model ?? MODEL_DEFAULT;
   await assertQuota(modelName);
+
+  if (vertexEnabled()) {
+    const startedAt = Date.now();
+    const r = await vertexGenerateText(modelName, {
+      systemPrompt: options?.systemPrompt,
+      userText: prompt,
+      temperature: options?.temperature,
+      maxTokens: options?.maxTokens ?? 2048,
+    });
+    const tokensUsed = r.promptTokens + r.completionTokens;
+    await trackTokenUsage(tokensUsed, modelName, options?.endpoint ?? "general");
+    await logGeneration({
+      provider: "gemini", model: modelName, purpose: options?.endpoint ?? "general",
+      promptTokens: r.promptTokens, completionTokens: r.completionTokens, durationMs: Date.now() - startedAt,
+    });
+    return { text: r.text, tokensUsed };
+  }
+
   const model = getModel(modelName);
 
   const parts = [];
@@ -105,6 +124,26 @@ export async function generateChat(
 ): Promise<GeminiResponse> {
   const modelName = MODEL_LITE;
   await assertQuota(modelName);
+
+  if (vertexEnabled()) {
+    const startedAt = Date.now();
+    const last = messages[messages.length - 1];
+    const r = await vertexGenerateText(modelName, {
+      systemPrompt,
+      userText: last?.content ?? "",
+      history: messages.slice(0, -1).map((m) => ({ role: m.role, text: m.content })),
+      temperature: 0.7,
+      maxTokens: 800,
+    });
+    const tokensUsed = r.promptTokens + r.completionTokens;
+    await trackTokenUsage(tokensUsed, modelName, endpoint ?? "chat");
+    await logGeneration({
+      provider: "gemini", model: modelName, purpose: endpoint ?? "chat",
+      promptTokens: r.promptTokens, completionTokens: r.completionTokens, durationMs: Date.now() - startedAt,
+    });
+    return { text: r.text, tokensUsed };
+  }
+
   const model = getModel(modelName);
 
   const history = messages.slice(0, -1).map((m) => ({
@@ -155,6 +194,37 @@ export async function generateJSON<T = unknown>(
 ): Promise<{ data: T; tokensUsed: number }> {
   const modelName = MODEL_DEFAULT;
   await assertQuota(modelName);
+
+  const parseJson = (s: string): T | null => {
+    try {
+      return JSON.parse(s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()) as T;
+    } catch { return null; }
+  };
+
+  if (vertexEnabled()) {
+    const startedAt = Date.now();
+    const run = (strict: boolean) => vertexGenerateText(modelName, {
+      systemPrompt,
+      userText: strict ? `${prompt}\n\nВажно: верни ТОЛЬКО валидный JSON, без markdown-фенсов.` : prompt,
+      temperature: 0.3, maxTokens: 4096, responseJson: true,
+    });
+    let r = await run(false);
+    let tokensUsed = r.promptTokens + r.completionTokens;
+    let data = parseJson(r.text);
+    if (data === null) {
+      r = await run(true);
+      tokensUsed += r.promptTokens + r.completionTokens;
+      data = parseJson(r.text);
+      if (data === null) {
+        await logGeneration({ provider: "gemini", model: modelName, purpose: "json-failed", promptTokens: 0, completionTokens: tokensUsed, durationMs: Date.now() - startedAt });
+        throw new Error(`Vertex JSON parse failed: ${r.text.slice(0, 200)}`);
+      }
+    }
+    await trackTokenUsage(tokensUsed, modelName, "json");
+    await logGeneration({ provider: "gemini", model: modelName, purpose: "json", promptTokens: 0, completionTokens: tokensUsed, durationMs: Date.now() - startedAt });
+    return { data, tokensUsed };
+  }
+
   const model = getModel(modelName);
 
   const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;

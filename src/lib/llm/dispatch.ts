@@ -13,6 +13,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { groqChat, AIRateLimitError, GROQ_MODELS, type GroqMessage } from "./groq";
 import { assertQuota, QuotaExceededError } from "../ai-quota";
 import { logGeneration, approxTokens } from "../ai-log";
+import { vertexEnabled, vertexGenerateText } from "../vertex";
 
 export type Provider = "gemini" | "groq";
 
@@ -106,6 +107,25 @@ async function chatViaGemini(opts: {
 }): Promise<DispatchResult> {
   const modelName = "gemini-2.5-flash-lite";
   await assertQuota(modelName);
+
+  if (vertexEnabled()) {
+    const startedAt = Date.now();
+    const r = await vertexGenerateText(modelName, {
+      systemPrompt: opts.systemPrompt,
+      userText: opts.userMessage,
+      history: opts.history.map((h) => ({ role: h.role === "assistant" ? "model" as const : "user" as const, text: h.content })),
+      temperature: opts.options.temperature ?? 0.7,
+      maxTokens: opts.options.maxTokens ?? 800,
+    });
+    const tokensUsed = r.promptTokens + r.completionTokens;
+    await logGeneration({
+      provider: "gemini", model: modelName, purpose: opts.options.purpose ?? "chat",
+      promptTokens: r.promptTokens, completionTokens: r.completionTokens,
+      durationMs: Date.now() - startedAt, userId: opts.options.userId ?? null,
+    });
+    return { content: r.text, provider: "gemini", model: modelName, tokensUsed };
+  }
+
   const model = getGemini().getGenerativeModel({ model: modelName });
   const startedAt = Date.now();
   const chat = model.startChat({

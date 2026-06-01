@@ -10,6 +10,13 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      # Vertex AI ($300-trial zhezu-052026) — Gemini-fallback + TTS. VERTEX_AI=1 включает.
+      # SA-json кладётся в ./secrets/vertex-sa.json (примонтирован ниже).
+      - VERTEX_AI=${VERTEX_AI:-0}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION:-us-central1}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-/app/secrets/vertex-sa.json}
+      - VERTEX_TTS_MODEL=${VERTEX_TTS_MODEL:-gemini-2.5-flash-tts}
       - AI_DISABLED=${AI_DISABLED:-0}
       - AI_USD_CAP_DAILY=${AI_USD_CAP_DAILY:-0.50}
       - AI_USD_CAP_TOTAL=${AI_USD_CAP_TOTAL:-4.50}
@@ -33,6 +40,7 @@ services:
       - ./public/uploads/books:/app/public/uploads/books
       - ./public/uploads/covers:/app/public/uploads/covers
       - ./scripts/books-data.json:/app/scripts/books-data.json:ro
+      - ./secrets:/app/secrets:ro
     restart: unless-stopped
 
   db:

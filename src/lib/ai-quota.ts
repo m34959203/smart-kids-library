@@ -127,9 +127,14 @@ export async function assertQuota(model: string): Promise<void> {
   const recent = await loadRecent(model, oneDayAgo);
   const rpm = recent.filter((r) => new Date(r.created_at) >= oneMinAgo).length;
   const rpd = recent.length;
+  // TTS логирует длину аудио (PCM-сэмплы) в completion_tokens как прокси для
+  // расчёта стоимости (≈12k/сек). Это НЕ текстовые токены Gemini — их нельзя
+  // считать против TPM-лимита, иначе один-два клипа сами себя блокируют.
+  // Для аудио-моделей в TPM учитываем только вход (prompt_tokens).
+  const isAudioModel = /tts|audio/i.test(model);
   const tpm = recent
     .filter((r) => new Date(r.created_at) >= oneMinAgo)
-    .reduce((a, r) => a + (r.prompt_tokens || 0) + (r.completion_tokens || 0), 0);
+    .reduce((a, r) => a + (r.prompt_tokens || 0) + (isAudioModel ? 0 : (r.completion_tokens || 0)), 0);
 
   const safe = (n: number) => Math.floor(n * SAFETY_RATIO);
 

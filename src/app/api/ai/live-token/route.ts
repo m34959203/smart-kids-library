@@ -33,7 +33,19 @@ export async function POST(request: Request) {
   const mode = body.mode || "librarian";
   const voice = VOICES[mode] || VOICES.librarian;
 
+  // Дата/время — иначе модель опирается на дату обучения (правило llm-dates).
+  const TZ = "Asia/Almaty";
+  const nowD = new Date();
+  const fmtRu = (d: Date) => d.toLocaleDateString("ru-RU", { timeZone: TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const fmtKk = (d: Date) => d.toLocaleDateString("kk-KZ", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" });
+  const timeNow = nowD.toLocaleTimeString("ru-RU", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+  const tomorrowD = new Date(nowD.getTime() + 86_400_000);
+  const afterD = new Date(nowD.getTime() + 2 * 86_400_000);
+  const dateBlockRu = `АКТУАЛЬНАЯ ДАТА (Сатпаев): СЕГОДНЯ — ${fmtRu(nowD)}, время ${timeNow}. ЗАВТРА — ${fmtRu(tomorrowD)}. ПОСЛЕЗАВТРА — ${fmtRu(afterD)}. Опирайся на эти даты для «сегодня/завтра», расписания и мероприятий; НЕ выдумывай другую дату.`;
+  const dateBlockKk = `НАҚТЫ КҮН (Сәтбаев): БҮГІН — ${fmtKk(nowD)}, уақыт ${timeNow}. ЕРТЕҢ — ${fmtKk(tomorrowD)}. АРҒЫ КҮНІ — ${fmtKk(afterD)}. «Бүгін/ертең», кесте, іс-шаралар туралы осы күндерге сүйен; басқа күнді ойлап таппа.`;
+
   const systemPromptRu = `Ты — Кітапхан, дружелюбный цифровой библиотекарь Детско-юношеской библиотеки города Сатпаев.
+${dateBlockRu}
 ПРАВИЛА ЖИВОГО ГОЛОСОВОГО ДИАЛОГА:
 1. Говори ТОЛЬКО на русском языке.
 2. Короткие, естественные фразы — это голос, не текст.
@@ -43,6 +55,7 @@ export async function POST(request: Request) {
 ${body.topic ? `6. Тема разговора: ${body.topic}` : ""}`;
 
   const systemPromptKk = `Сен — Кітапхан, Сәтбаев қаласы Балалар-жасөспірімдер кітапханасының достық цифрлық кітапханашысы.
+${dateBlockKk}
 ТІРІ ДАУЫСТЫ ДИАЛОГ ЕРЕЖЕЛЕРІ:
 1. ТЕК қазақ тілінде сөйле.
 2. Қысқа, табиғи сөйлемдер — бұл дауыс, мәтін емес.

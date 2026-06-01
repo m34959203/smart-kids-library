@@ -1,5 +1,8 @@
 /* Smart Kids Library — service worker */
-const CACHE_VERSION = "skl-v2-redesign";
+// Версия кеша берётся из ?v=<build> в URL регистрации (см. ServiceWorkerRegister).
+// Каждая новая сборка → новый ключ → activate удалит старые кеши (самоисцеление).
+const SW_BUILD = new URL(self.location).searchParams.get("v") || "v0";
+const CACHE_VERSION = "skl-" + SW_BUILD;
 const APP_SHELL = [
   "/",
   "/ru",
