@@ -1,5 +1,15 @@
+import { sectionMetadata } from "@/lib/seo";
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import NewsCard from "@/components/features/NewsCard";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "news");
+}
 
 export default async function NewsPage({
   params,

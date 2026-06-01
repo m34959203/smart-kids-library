@@ -1,3 +1,4 @@
+import { sectionMetadata } from "@/lib/seo";
 import { getMessages, isValidLocale, type Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 import Link from "next/link";
@@ -39,6 +40,15 @@ async function getHomeStats(): Promise<{ books: string; readers: string }> {
   const books = manualBooks?.trim() || fmt(booksCount);
   const readers = manualReaders?.trim() || fmt(usersCount);
   return { books, readers };
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "home");
 }
 
 export default async function HomePage({

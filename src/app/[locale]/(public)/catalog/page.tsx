@@ -1,3 +1,4 @@
+import { sectionMetadata } from "@/lib/seo";
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -24,6 +25,15 @@ interface BookRow {
 const AGES = ["6-9", "10-13", "14-17"] as const;
 type AgeFilter = typeof AGES[number] | "all";
 type Section = "all" | "lore";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "catalog");
+}
 
 export default async function CatalogPage({
   params,

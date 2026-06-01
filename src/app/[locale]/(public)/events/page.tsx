@@ -1,3 +1,4 @@
+import { sectionMetadata } from "@/lib/seo";
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import EventCalendar from "@/components/features/EventCalendar";
 import ContextualHints from "@/components/features/ContextualHints";
@@ -29,6 +30,15 @@ async function loadEvents(): Promise<EventRow[]> {
   } catch {
     return [];
   }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "events");
 }
 
 export default async function EventsPage({

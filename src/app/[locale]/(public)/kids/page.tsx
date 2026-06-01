@@ -1,7 +1,17 @@
+import { sectionMetadata } from "@/lib/seo";
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Link from "next/link";
 import Image from "next/image";
 import ContextualHints from "@/components/features/ContextualHints";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "kids");
+}
 
 export default async function KidsPage({
   params,

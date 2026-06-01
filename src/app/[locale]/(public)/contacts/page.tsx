@@ -1,3 +1,4 @@
+import { sectionMetadata } from "@/lib/seo";
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Card from "@/components/ui/Card";
 import { getMany } from "@/lib/db";
@@ -25,6 +26,15 @@ async function getContacts(): Promise<Record<string, string>> {
   } catch {
     return {};
   }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "contacts");
 }
 
 export default async function ContactsPage({

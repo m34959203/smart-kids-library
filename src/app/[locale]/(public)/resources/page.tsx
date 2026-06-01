@@ -1,7 +1,17 @@
+import { sectionMetadata } from "@/lib/seo";
 import { isValidLocale, type Locale, getMessages, t } from "@/lib/i18n";
 import Card from "@/components/ui/Card";
 import Link from "next/link";
 import CmsBlock from "@/components/features/CmsBlock";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return sectionMetadata(locale, "resources");
+}
 
 export default async function ResourcesPage({
   params,
