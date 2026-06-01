@@ -65,6 +65,41 @@ export async function vertexGenerateContent(
   return res.json();
 }
 
+/**
+ * Генерация изображения через Imagen (:predict). Возвращает data-URL PNG или null.
+ * Для раскрасок: чистый контур (line art) — недостижимо качеством LLM-SVG.
+ */
+export async function vertexGenerateImage(
+  prompt: string,
+  opts?: { model?: string; aspectRatio?: string; negativePrompt?: string },
+): Promise<string | null> {
+  const model = opts?.model || process.env.VERTEX_IMAGE_MODEL || "imagen-3.0-generate-002";
+  const token = await getToken();
+  const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${LOCATION}/publishers/google/models/${model}:predict`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      instances: [{ prompt }],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: opts?.aspectRatio || "1:1",
+        ...(opts?.negativePrompt ? { negativePrompt: opts.negativePrompt } : {}),
+      },
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err: VertexError = new Error(`Vertex image ${model} HTTP ${res.status}: ${text.slice(0, 300)}`);
+    err.status = res.status;
+    throw err;
+  }
+  const data: { predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }> } = await res.json();
+  const pred = data.predictions?.[0];
+  if (!pred?.bytesBase64Encoded) return null;
+  return `data:${pred.mimeType || "image/png"};base64,${pred.bytesBase64Encoded}`;
+}
+
 /** Текстовая генерация: возвращает {text, promptTokens, completionTokens}. */
 export async function vertexGenerateText(
   model: string,

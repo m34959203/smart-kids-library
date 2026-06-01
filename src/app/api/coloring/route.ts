@@ -4,6 +4,9 @@ import { quotaErrorResponse } from "@/lib/llm/quota-error-response";
 import { isWithinTokenLimit } from "@/lib/token-tracker";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { readJson, v, validate } from "@/lib/validate";
+import { vertexEnabled, vertexGenerateImage } from "@/lib/vertex";
+import { assertQuota } from "@/lib/ai-quota";
+import { logGeneration } from "@/lib/ai-log";
 
 const schema = v.object({
   theme: v.string({ min: 1, max: 200 }),
@@ -68,6 +71,26 @@ export async function POST(request: NextRequest) {
   const withinLimit = await isWithinTokenLimit();
   if (!withinLimit) {
     return NextResponse.json({ svg: FALLBACK_SVG(theme), source: "limit-fallback" });
+  }
+
+  // Лучшее качество: настоящий контур через Imagen (Vertex), а не LLM-SVG.
+  if (vertexEnabled()) {
+    const imgModel = process.env.VERTEX_IMAGE_MODEL || "imagen-3.0-generate-002";
+    try {
+      await assertQuota(imgModel);
+      const startedAt = Date.now();
+      const prompt = `Black and white line art coloring page for children. Subject: ${theme}. Bold clean black outlines on a pure white background, no shading, no gray, no color fill, simple friendly cartoon style with large areas easy to color. Centered composition, full subject visible.`;
+      const negativePrompt = "color, colour, shading, grayscale, gradient, photo, realistic, text, watermark, blurry, complex background";
+      const image = await vertexGenerateImage(prompt, { aspectRatio: "1:1", negativePrompt });
+      if (image) {
+        await logGeneration({ provider: "gemini", model: imgModel, purpose: "coloring-image", promptTokens: 0, completionTokens: 0, durationMs: Date.now() - startedAt });
+        return NextResponse.json({ image, source: "imagen" });
+      }
+    } catch (error) {
+      const q = quotaErrorResponse(error, parsed.data.language ?? "ru");
+      if (q) return q;
+      console.error("Coloring Imagen failed, fallback to SVG:", error);
+    }
   }
 
   // Попытка 1: structured JSON через responseMimeType (Gemini надёжнее, чем

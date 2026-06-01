@@ -8,30 +8,35 @@ interface ColoringGeneratorProps {
   locale: string;
 }
 
+interface ColoringResult {
+  image?: string; // data:image/png;base64,...  (Imagen — высокое качество)
+  svg?: string;   // fallback line-art
+}
+
 export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
   const [theme, setTheme] = useState("");
   const [loading, setLoading] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
-  const [svgs, setSvgs] = useState<string[]>([]);
+  const [result, setResult] = useState<ColoringResult | null>(null);
   const [rateLimit, setRateLimit] = useState<{ message: string; hint?: string } | null>(null);
 
   const labels = locale === "kk"
     ? {
         title: "Бояулар генераторы",
         placeholder: "Тақырыпты теріңіз (мысалы: арыстан, құс)",
-        generate: "5 бояу жасау!",
+        generate: "Бояу жасау!",
         generating: "Жасалуда...",
         downloadPdf: "PDF жүктеу",
-        downloadOne: "SVG жүктеу",
+        downloadImg: "Сурет жүктеу",
         pdfBusy: "PDF жасалуда...",
       }
     : {
         title: "Генератор раскрасок",
         placeholder: "Введите тему (например: лев, птица)",
-        generate: "Создать 5 раскрасок!",
+        generate: "Создать раскраску!",
         generating: "Создаю...",
         downloadPdf: "Скачать PDF",
-        downloadOne: "Скачать SVG",
+        downloadImg: "Скачать картинку",
         pdfBusy: "Готовлю PDF...",
       };
 
@@ -44,44 +49,31 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
     { icon: "🐱", label: locale === "kk" ? "Мысық" : "Кошка" },
   ];
 
-  const generateColorings = async () => {
+  const generateColoring = async () => {
     if (!theme.trim()) return;
     setLoading(true);
-    setSvgs([]);
+    setResult(null);
     setRateLimit(null);
     try {
-      // 5 раскрасок параллельно (ТЗ: «5 контурных иллюстраций → PDF»)
-      const variants = ["main", "side", "scene", "close-up", "playful"];
-      const results = await Promise.allSettled(
-        variants.map((variant) =>
-          fetch("/api/coloring", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ theme: `${theme} (${variant})`, language: locale }),
-          }).then(async (r) => ({ status: r.status, body: await r.json() })),
-        ),
-      );
-
-      // Если все 5 попыток упёрлись в один и тот же rate-limit — показать сообщение
-      const rl = results.find((r) =>
-        r.status === "fulfilled" && r.value.status === 429 && r.value.body?.source === "rate_limit"
-      ) as PromiseFulfilledResult<{ status: number; body: { error: string; hint?: string } }> | undefined;
-      if (rl) {
-        setRateLimit({ message: rl.value.body.error, hint: rl.value.body.hint });
+      const r = await fetch("/api/coloring", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme, language: locale }),
+      });
+      const body = await r.json();
+      if (r.status === 429 && body?.source === "rate_limit") {
+        setRateLimit({ message: body.error, hint: body.hint });
+        return;
       }
-
-      const out = results
-        .filter((r): r is PromiseFulfilledResult<{ status: number; body: { svg?: string } }> =>
-          r.status === "fulfilled" && Boolean(r.value.body?.svg))
-        .map((r) => r.value.body.svg as string);
-      setSvgs(out);
+      if (body?.image) setResult({ image: body.image });
+      else if (body?.svg) setResult({ svg: body.svg });
     } finally {
       setLoading(false);
     }
   };
 
-  const svgToPngDataUrl = (svg: string, width = 800): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  const svgToPngDataUrl = (svg: string, width = 1200): Promise<string> =>
+    new Promise((resolve, reject) => {
       const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const img = new Image();
@@ -91,49 +83,31 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
         canvas.width = width;
         canvas.height = Math.round(width * ratio);
         const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          URL.revokeObjectURL(url);
-          reject(new Error("no ctx"));
-          return;
-        }
+        if (!ctx) { URL.revokeObjectURL(url); reject(new Error("no ctx")); return; }
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
         resolve(canvas.toDataURL("image/png"));
       };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error("img load"));
-      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img load")); };
       img.src = url;
     });
-  };
 
   const downloadPdf = async () => {
-    if (svgs.length === 0) return;
+    if (!result) return;
     setPdfBusy(true);
     try {
       const { jsPDF } = await import("jspdf");
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-
-      for (let i = 0; i < svgs.length; i++) {
-        if (i > 0) pdf.addPage();
-        try {
-          const png = await svgToPngDataUrl(svgs[i], 1200);
-          // вписать в страницу с полями 10мм
-          const margin = 10;
-          const w = pageW - margin * 2;
-          const h = pageH - margin * 2 - 15;
-          pdf.addImage(png, "PNG", margin, margin + 10, w, h, undefined, "FAST");
-          pdf.setFontSize(12);
-          pdf.text(`${theme} — ${i + 1}/${svgs.length}`, pageW / 2, margin + 5, { align: "center" });
-        } catch {
-          pdf.setFontSize(14);
-          pdf.text(`Изображение ${i + 1} не удалось встроить`, pageW / 2, pageH / 2, { align: "center" });
-        }
+      const margin = 10;
+      const png = result.image ?? (result.svg ? await svgToPngDataUrl(result.svg, 1200) : null);
+      if (png) {
+        pdf.setFontSize(12);
+        pdf.text(theme, pageW / 2, margin + 5, { align: "center" });
+        pdf.addImage(png, "PNG", margin, margin + 10, pageW - margin * 2, pageH - margin * 2 - 15, undefined, "FAST");
       }
       pdf.save(`coloring-${theme.replace(/\s+/g, "-")}.pdf`);
     } finally {
@@ -141,18 +115,18 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
     }
   };
 
-  const downloadOneSvg = (svg: string, idx: number) => {
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
+  const downloadImage = async () => {
+    if (!result) return;
+    const dataUrl = result.image ?? (result.svg ? await svgToPngDataUrl(result.svg, 1200) : null);
+    if (!dataUrl) return;
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `coloring-${theme}-${idx + 1}.svg`;
+    a.href = dataUrl;
+    a.download = `coloring-${theme.replace(/\s+/g, "-")}.png`;
     a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <h2 className="text-2xl font-bold text-purple-900 text-center">{labels.title}</h2>
 
       <div className="flex flex-wrap gap-2 justify-center">
@@ -176,7 +150,7 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
           placeholder={labels.placeholder}
           className="flex-1 px-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 outline-none"
         />
-        <Button onClick={generateColorings} loading={loading} size="lg">
+        <Button onClick={generateColoring} loading={loading} size="lg">
           {loading ? labels.generating : labels.generate}
         </Button>
       </div>
@@ -188,34 +162,28 @@ export default function ColoringGenerator({ locale }: ColoringGeneratorProps) {
         </div>
       )}
 
-      {svgs.length > 0 && (
-        <>
-          <div className="flex justify-center">
+      {result && (
+        <Card className="p-4 text-center space-y-4">
+          {result.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={result.image} alt={theme} className="w-full max-w-md mx-auto rounded-xl bg-white" />
+          ) : (
+            <div
+              data-coloring
+              className="w-full max-w-md mx-auto"
+              style={{ aspectRatio: "1 / 1" }}
+              dangerouslySetInnerHTML={{ __html: result.svg ?? "" }}
+            />
+          )}
+          <div className="flex gap-2 justify-center">
             <Button onClick={downloadPdf} loading={pdfBusy} size="lg">
-              {pdfBusy ? labels.pdfBusy : `📄 ${labels.downloadPdf} (${svgs.length})`}
+              {pdfBusy ? labels.pdfBusy : `📄 ${labels.downloadPdf}`}
+            </Button>
+            <Button variant="outline" size="lg" onClick={downloadImage}>
+              {labels.downloadImg}
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {svgs.map((svg, i) => (
-              <Card key={i} className="p-4 text-center">
-                {/* SVG из Gemini не содержит width/height — только viewBox.
-                    data-coloring + правило в globals.css растягивают svg
-                    на полную ширину контейнера и сохраняют aspect-ratio. */}
-                <div
-                  data-coloring
-                  className="w-full"
-                  style={{ aspectRatio: "1 / 1" }}
-                  dangerouslySetInnerHTML={{ __html: svg }}
-                />
-                <div className="mt-3">
-                  <Button variant="outline" size="sm" onClick={() => downloadOneSvg(svg, i)}>
-                    {labels.downloadOne}
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
+        </Card>
       )}
     </div>
   );
