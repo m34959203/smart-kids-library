@@ -25,9 +25,8 @@
 
 ## Demo
 
-- **Live (через Cloudflare quick tunnel):** временная ссылка вида
-  `https://<random>.trycloudflare.com/ru` (меняется при перезапуске туннеля).
-- Домен `*.kz` пока не зарегистрирован — демо для заказчика.
+- **Production:** **https://dubsatpaev.kz** — Caddy + Let's Encrypt на Сатпаев-VPS,
+  приложение на `127.0.0.1:3013`. Билингв: `/ru` и `/kk`, `www` → редирект на апекс.
 - Скриншоты интерфейса: [docs/screenshots/](docs/screenshots/).
 
 ## Архитектура
@@ -36,7 +35,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  Browser (PWA + WebSpeech)                                  │
 └──────────────────┬──────────────────────────────────────────┘
-                   │ HTTPS via cloudflared
+                   │ HTTPS via Caddy + Let's Encrypt (dubsatpaev.kz)
                    ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Next.js 16 App Router (standalone)                         │

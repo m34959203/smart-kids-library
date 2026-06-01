@@ -111,6 +111,37 @@ node .next/standalone/server.js
 | `CRON_SECRET` | защита `/api/social/tick` |
 | `ALLOWED_ORIGINS` | CSV доменов для CORS-заголовков на `/api/*` |
 
+## Production (dubsatpaev.kz)
+
+Боевой стенд — общий VPS четырёх проектов Сатпаев (`109.235.118.147`, Ubuntu 24.04).
+Образы собираются **локально** и переносятся (`docker save | ssh load`); на сервере
+не билдятся.
+
+```bash
+# 1. Сборка с боевым доменом. NEXT_PUBLIC_APP_URL запекается на build —
+#    без него sitemap.xml/robots.txt уходят на localhost.
+docker build --build-arg NEXT_PUBLIC_APP_URL=https://dubsatpaev.kz \
+  -t smart-kids-library-app:latest .
+
+# 2. Перенос образа на VPS
+docker save smart-kids-library-app:latest | gzip | \
+  ssh root@109.235.118.147 'gunzip | docker load'
+
+# 3. Рестарт (на сервере, /opt/satpayev/kids/)
+ssh root@109.235.118.147 'cd /opt/satpayev/kids && docker compose up -d'
+```
+
+- **Маршрут:** ps.kz A `@`+`www` → `109.235.118.147`; Caddy (`/etc/caddy/Caddyfile`)
+  `dubsatpaev.kz { reverse_proxy 127.0.0.1:3013 }` + `www` → редирект на апекс. TLS —
+  Let's Encrypt автоматически (tls-alpn-01, авто-renew). **Cloudflare не используется.**
+- **compose env** (`/opt/satpayev/kids/docker-compose.yml`): `NEXTAUTH_URL` и
+  `NEXT_PUBLIC_APP_URL` = `https://dubsatpaev.kz`, app слушает `127.0.0.1:3013`.
+- Почта (`mail`/MX/SPF) и `v2.dubsatpaev.kz` остаются на старом IP — **не трогать**.
+
+> **SEO-индексация (TODO, действия заказчика/владельца):** после деплоя подключить
+> Google Search Console + Яндекс.Вебмастер, отправить `https://dubsatpaev.kz/sitemap.xml`,
+> запросить индексацию — без этого сайт не появится в выдаче.
+
 ## Production-чеклист
 
 1. ✅ `NEXTAUTH_SECRET` сгенерирован безопасно.
