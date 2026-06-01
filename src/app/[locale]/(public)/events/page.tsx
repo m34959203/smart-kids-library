@@ -61,7 +61,9 @@ export default async function EventsPage({
   const events = rows.map((r) => ({
     id: r.id,
     title: (kk ? r.title_kk : r.title_ru) || r.title_ru || r.title_kk || "",
-    description: (kk ? r.description_kk : r.description_ru) || r.description_ru || r.description_kk || "",
+    // В списке-афише показываем краткий текст — снимаем HTML-теги rich-редактора.
+    description: ((kk ? r.description_kk : r.description_ru) || r.description_ru || r.description_kk || "")
+      .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
     event_type: r.event_type,
     start_date: toIso(r.start_date),
     end_date: r.end_date ? toIso(r.end_date) : undefined,

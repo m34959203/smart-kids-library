@@ -6,6 +6,7 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import Badge from "@/components/ui/Badge";
 
 interface EventItem {
@@ -149,7 +150,7 @@ export default function AdminEventsPage() {
             <Input label="Title (KK)" value={editing.title_kk ?? ""} onChange={(e) => setEditing({ ...editing, title_kk: e.target.value })} />
             <div>
               <label className="text-sm text-gray-600 block mb-1">Description (RU)</label>
-              <textarea value={editing.description_ru ?? ""} onChange={(e) => setEditing({ ...editing, description_ru: e.target.value })} rows={3} className="w-full rounded-xl border border-purple-200 px-3 py-2 text-sm" />
+              <RichTextEditor value={editing.description_ru ?? ""} onChange={(html) => setEditing({ ...editing, description_ru: html })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

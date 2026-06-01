@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 interface CmsRow {
   id: number;
@@ -146,8 +147,14 @@ export default function AdminPagesPage() {
             <Field label="Slug" value={form.slug} onChange={(v) => setForm({ ...form, slug: v })} mono />
             <Field label="Заголовок (RU)" value={form.title_ru} onChange={(v) => setForm({ ...form, title_ru: v })} />
             <Field label="Заголовок (KK)" value={form.title_kk} onChange={(v) => setForm({ ...form, title_kk: v })} />
-            <TextareaField label="Контент (RU, HTML)" value={form.content_ru} onChange={(v) => setForm({ ...form, content_ru: v })} rows={10} />
-            <TextareaField label="Контент (KK, HTML)" value={form.content_kk} onChange={(v) => setForm({ ...form, content_kk: v })} rows={10} />
+            <div>
+              <label className="text-sm text-gray-600 block mb-1">Контент (RU)</label>
+              <RichTextEditor value={form.content_ru} onChange={(v) => setForm({ ...form, content_ru: v })} />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600 block mb-1">Контент (KK)</label>
+              <RichTextEditor value={form.content_kk} onChange={(v) => setForm({ ...form, content_kk: v })} />
+            </div>
             <Field label="Meta description (RU)" value={form.meta_description_ru} onChange={(v) => setForm({ ...form, meta_description_ru: v })} />
             <Field label="Meta description (KK)" value={form.meta_description_kk} onChange={(v) => setForm({ ...form, meta_description_kk: v })} />
             <div className="flex justify-end gap-2 pt-2">
@@ -169,20 +176,6 @@ function Field({ label, value, onChange, mono }: { label: string; value: string;
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none ${mono ? "font-mono text-sm" : ""}`}
-      />
-    </label>
-  );
-}
-
-function TextareaField({ label, value, onChange, rows = 4 }: { label: string; value: string; onChange: (v: string) => void; rows?: number }) {
-  return (
-    <label className="block">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={rows}
-        className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none font-mono text-sm"
       />
     </label>
   );

@@ -6,6 +6,7 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 interface NewsItem {
   id: number;
@@ -161,20 +162,16 @@ export default function AdminNewsPage() {
             </div>
             <div>
               <label className="text-sm text-gray-600 block mb-1">Content (RU)</label>
-              <textarea
+              <RichTextEditor
                 value={editing.content_ru ?? ""}
-                onChange={(e) => setEditing({ ...editing, content_ru: e.target.value })}
-                rows={6}
-                className="w-full rounded-xl border border-purple-200 px-3 py-2 text-sm"
+                onChange={(html) => setEditing({ ...editing, content_ru: html })}
               />
             </div>
             <div>
               <label className="text-sm text-gray-600 block mb-1">Content (KK)</label>
-              <textarea
+              <RichTextEditor
                 value={editing.content_kk ?? ""}
-                onChange={(e) => setEditing({ ...editing, content_kk: e.target.value })}
-                rows={6}
-                className="w-full rounded-xl border border-purple-200 px-3 py-2 text-sm"
+                onChange={(html) => setEditing({ ...editing, content_kk: html })}
               />
               <button
                 type="button"

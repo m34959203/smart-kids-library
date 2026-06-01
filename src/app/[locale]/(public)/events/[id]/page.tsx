@@ -76,7 +76,12 @@ export default async function EventDetailPage({
         </div>
 
         <h1 className="text-3xl font-bold text-purple-900">{title}</h1>
-        {description && <p className="text-gray-700 leading-relaxed text-lg">{description}</p>}
+        {description && (
+          <div
+            className="prose max-w-none text-gray-700 leading-relaxed text-lg"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-purple-50 rounded-2xl p-4">
           <div className="flex items-center gap-3">
